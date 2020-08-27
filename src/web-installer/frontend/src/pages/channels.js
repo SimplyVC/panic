@@ -3,8 +3,9 @@ import React from 'react';
 import Title from '../components/global/title';
 import MainText from '../components/global/mainText';
 import NavigationButtonContainer from '../containers/global/navigationButtonContainer';
-import Data from '../data/channels';
+import ChannelsGrid from '../components/channels/channelsGrid';
 import { WELCOME_PAGE, CHAINS_PAGE } from "../constants/pages";
+import Data from '../data/channels';
 
 function Channels() {
     return (
@@ -15,6 +16,7 @@ function Channels() {
             <MainText
                 text={Data.channels.description}
             />
+            <ChannelsGrid />
             <NavigationButtonContainer
                 text={'Next'}
                 navigation={CHAINS_PAGE}
