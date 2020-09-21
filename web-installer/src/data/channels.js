@@ -59,15 +59,17 @@ export default {
     description: 'PagerDuty is an incident management platform that provides reliable '
     + 'notifications, automatic escalations, on-call scheduling, and other functionality '
     + 'to help teams detect and fix infrastructure problems quickly.',
-    name: 'This will be used to identify the saved pagerduty configuration.',
+    name: 'This will be used to identify the saved PagerDuty configuration.',
     token: 'This is your API token that will be used to send alerts to PagerDuty.',
-    severties: 'These dictate which alerts will be sent to PagerDuty.',
+    integrationKey: 'This key can be found on your PagerDuty dashboard.',
+    severties: 'Severties dictate which alerts will be sent to PagerDuty.',
   },
   opsGenie: {
-    name: 'Opsgenie is a modern incident management platform for operating '
+    description: 'Opsgenie is a modern incident management platform for operating '
     + 'always-on services, empowering Dev and Ops teams to plan for service '
     + 'disruptions and stay in control during incidents.',
+    name: 'This will be used to identify the saved OpsGenie configuration.',
     token: 'This is your API token that will be used to send alerts to OpsGenie.',
-    severties: 'These dictate which alerts will be sent to OpsGenie.',
+    severties: 'Severties dictate which alerts will be sent to OpsGenie.',
   },
 };
