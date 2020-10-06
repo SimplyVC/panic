@@ -1,6 +1,6 @@
 import {
   CHAINS_PAGE, CHANNELS_STEP, NODES_STEP, REPOSITORIES_STEP, CHAINS_STEP,
-  KMS_STEP,
+  KMS_STEP, ALERTS_STEP,
 } from '../constants/constants';
 
 export default {
@@ -60,5 +60,9 @@ export default {
     monitorTip: 'Set True if you want to monitor this repository.',
     backStep: NODES_STEP,
     nextStep: KMS_STEP,
+  },
+  channelsTable: {
+    backStep: REPOSITORIES_STEP,
+    nextStep: ALERTS_STEP,
   },
 };
