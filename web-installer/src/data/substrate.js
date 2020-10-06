@@ -17,7 +17,7 @@ export default {
     name: '',
     tendermintRPC: '',
     cosmosSDKRPC: '',
-    prometheusURL: '',
+    prometheusUrl: '',
     nodeExporterURL: '',
     isValidator: '',
     isArchive: '',
