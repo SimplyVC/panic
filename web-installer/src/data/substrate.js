@@ -12,4 +12,16 @@ export default {
     backStep: CHAINS_PAGE,
     nextStep: NODES_STEP,
   },
+  nodeForm: {
+    description: '',
+    name: '',
+    tendermintRPC: '',
+    cosmosSDKRPC: '',
+    prometheusURL: '',
+    nodeExporterURL: '',
+    isValidator: '',
+    isArchive: '',
+    monitorNode: '',
+    useAsDataSource: '',
+  },
 };
