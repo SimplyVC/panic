@@ -1,3 +1,5 @@
+import { CHAINS_PAGE, NODES_STEP } from '../constants/constants';
+
 export default {
   substrate: {
     title: 'Substrate Chain Setup',
@@ -7,5 +9,7 @@ export default {
     description: 'We will now go through the setup of substrate based chains.',
     placeholder: 'polkadot',
     tooltip: 'This will be used to identify the current chain that you are setting up.',
+    backStep: CHAINS_PAGE,
+    nextStep: NODES_STEP,
   },
 };

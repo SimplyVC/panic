@@ -1,4 +1,6 @@
-import { CHANNELS_STEP, REPOSITORIES_STEP } from '../constants/constants';
+import {
+  CHAINS_PAGE, CHANNELS_STEP, NODES_STEP, REPOSITORIES_STEP,
+} from '../constants/constants';
 
 export default {
   cosmos: {
@@ -9,6 +11,8 @@ export default {
     description: 'We will now go through the setup of cosmos based chains.',
     placeholder: 'cosmos',
     tooltip: 'This will be used to identify the current chain that you are setting up.',
+    backStep: CHAINS_PAGE,
+    nextStep: NODES_STEP,
   },
   kmsForm: {
     description: 'Kms description needs to be provided here.',
