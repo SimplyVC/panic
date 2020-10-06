@@ -1,5 +1,6 @@
 import {
   CHAINS_PAGE, CHANNELS_STEP, NODES_STEP, REPOSITORIES_STEP, CHAINS_STEP,
+  KMS_STEP,
 } from '../constants/constants';
 
 export default {
@@ -49,5 +50,15 @@ export default {
       + 'this node.',
     backStep: CHAINS_STEP,
     nextStep: REPOSITORIES_STEP,
+  },
+  repoForm: {
+    description: 'Cosmos based repositories description goes here.',
+    nameHolder: 'tendermint/tendermint',
+    nameTip: 'This is the path of the repository that will be monitored. E.g: '
+      + 'If the full URL is https://github.com/tendermint/tendermint then you '
+      + 'have to enter tendermint/tendermint.',
+    monitorTip: 'Set True if you want to monitor this repository.',
+    backStep: NODES_STEP,
+    nextStep: KMS_STEP,
   },
 };

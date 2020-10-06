@@ -1,4 +1,6 @@
-import { CHAINS_PAGE, NODES_STEP } from '../constants/constants';
+import {
+  CHAINS_PAGE, CHANNELS_STEP, NODES_STEP, CHAINS_STEP, REPOSITORIES_STEP,
+} from '../constants/constants';
 
 export default {
   substrate: {
@@ -13,15 +15,39 @@ export default {
     nextStep: NODES_STEP,
   },
   nodeForm: {
-    description: '',
-    name: '',
-    tendermintRPC: '',
-    cosmosSDKRPC: '',
-    prometheusUrl: '',
-    nodeExporterURL: '',
-    isValidator: '',
-    isArchive: '',
-    monitorNode: '',
-    useAsDataSource: '',
+    description: 'Substrate node setup description goes here.',
+    nameHolder: 'polkadot-node-1',
+    nameTip: 'This unique identifier will be used to identify your node.',
+    websocketHolder: 'ws://122.321.32.12:9944',
+    websocketTip: 'This IP address will be used to monitor the polkadot node  '
+      + 'statistics, if ommitted they will not be monitored and alerted on.',
+    telemetryHolder: 'http://122.321.32.12:8000',
+    telemetryTip: 'This IP address will be used to monitor telemetry based '
+      + 'statistics, if ommitted they will not be monitored and alerted on.',
+    prometheusHodler: 'http://122.321.32.12:26660',
+    prometheusTip: 'This IP address will be used to monitor prometheus based '
+      + 'statistics, if ommitted they will not be monitored and alerted on.',
+    exporterUrlHolder: 'http://122,.321.32.12:9100',
+    exporterUrlTip: 'This IP address will be used to monitor node exporter '
+      + 'statistics, if ommitted they will not be monitored and alerted on.',
+    stashAddressHolder: 'EDDJBTFGdsg0gh8sd0sdsda2asd12dasdafs',
+    stashAddressTip: 'This will be used to monitor the stash address account.',
+    isValidatorTip: 'Set True if the node you are setting up is a validator.',
+    isArchiveTip: 'Set True if the node you are setting up is an archive node.',
+    monitorNodeTip: 'Set True if you want to monitor this configured node.',
+    useAsDataSourceTip: 'Set True if you want to retreive blockchain data from '
+      + 'this node.',
+    backStep: CHAINS_STEP,
+    nextStep: REPOSITORIES_STEP,
+  },
+  repoForm: {
+    description: 'Substrate based repositories description goes here.',
+    nameHolder: 'paritytech/substrate',
+    nameTip: 'This is the path of the repository that will be monitored. E.g: '
+      + 'If the full URL is https://github.com/paritytech/substrate then you '
+      + 'have to enter paritytech/substrate.',
+    monitorTip: 'Set True if you want to monitor this repository.',
+    backStep: NODES_STEP,
+    nextStep: CHANNELS_STEP,
   },
 };
