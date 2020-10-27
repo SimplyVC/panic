@@ -11,11 +11,3 @@ When changing durability of rabbitmq exchange from `True` to `False` or vice-ver
 Solution:
 If you are running rabbitmq in docker then run this command, replace `DOCKER_ID` with the docker id found corresponding to rabbitmq container when running
 `docker ps`. You will also need to provide the name of the exchange that you are changing the durability of in `EXHCNAGE_NAME`. Command : `docker exec -it DOCKER_CONTAINER_ID rabbitmqadmin delete exchange name='EXCHANGE_NAME'`.
-
-
-# Restarting PANIC if it crashed RabbitMQ has data in queues
-
-When starting panic, or initialising rabbitmq queues, they should all be purged
-from messages or those restars would lead to failure loops.
-Command : `sudo docker exec -it 03a1134ae71a rabbitmqctl purge_queue alerts_store_queue`
-Should be done programmatically on queue initialization
