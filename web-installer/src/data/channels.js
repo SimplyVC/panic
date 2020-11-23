@@ -1,17 +1,24 @@
 export default {
   channels: {
     title: 'Channels Settings',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis eget nisi '
-    + 'sed dolor ornare fermentum. Fusce massa augue, pulvinar ut consectetur a, auctor '
-    + 'non lacus. Donec dui libero, luctus ut libero a, sodales molestie sapien. Sed ac '
-    + 'orci molestie, dignissim sem egestas, vehicula urna. Cras odio nunc, viverra et '
-    + 'iaculis ut, cursus vitae arcu. Sed eros massa, pretium a diam at, semper placerat '
-    + 'tellus. Donec vestibulum tortor non tellus placerat tincidunt. Nullam imperdiet '
-    + 'augue nulla, non imperdiet eros sodales nec. In hac habitasse platea dictumst. '
-    + 'Vivamus vel rhoncus turpis. Proin in velit magna. Nullam volutpat venenatis '
-    + 'placerat. Etiam ex eros, rhoncus nec diam vel, sollicitudin commodo dui. Sed '
-    + 'suscipit quis neque vel blandit. Vivamus dui nisl, pellentesque porttitor vehicula '
-    + 'sed, tempus sit amet orci. Vestibulum congue laoreet dui sed viverra.',
+    what_title: 'What are Channels?',
+    why_title: 'Why are they needed?',
+    how_title: 'How are they setup?',
+    what: 'Channels are various means of communication that PANIC will utilize '
+        + 'to communicate with it\'s users. There are different types of '
+        + 'channels that cater for users needs such as calling them directly '
+        + 'during critical situations or even allowing a user to check the '
+        + 'status of PANIC through Telegram Commands.',
+    why: 'Channels are needed as they provide a reliable way of alerting users'
+        + ' of any issues that may be occurring with their blockchains. '
+        + 'Ensuring the uptime of blockchains is crucial for operators '
+        + 'as well as their investors as potential downtime could lead to loss '
+        + 'of funds and therefore loss of trust.',
+    how: 'Channels can be setup in the section below, you can configure as many'
+        + ' channels as you want. It is best to have multiple channels setup '
+        + 'to ensure an operator is reachable. Alerts will be sent to the '
+        + 'channels according to their specific blockchain and alert severity '
+        + 'level.',
   },
   telegram: {
     description: 'Alerts sent via Telegram are a fast and reliable means of alerting '
