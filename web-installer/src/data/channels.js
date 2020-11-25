@@ -1,24 +1,46 @@
 export default {
   channels: {
-    title: 'Channels Settings',
+    title: 'Channel\'s Setup',
+    subtitle_1: 'Everything you need to know about Channels.',
+    subtitle_2: 'Setup the channels now.',
     what_title: 'What are Channels?',
-    why_title: 'Why are they needed?',
+    supported_title: 'Supported Channels',
     how_title: 'How are they setup?',
-    what: 'Channels are various means of communication that PANIC will utilize '
-        + 'to communicate with it\'s users. There are different types of '
-        + 'channels that cater for users needs such as calling them directly '
-        + 'during critical situations or even allowing a user to check the '
-        + 'status of PANIC through Telegram Commands.',
-    why: 'Channels are needed as they provide a reliable way of alerting users'
-        + ' of any issues that may be occurring with their blockchains. '
-        + 'Ensuring the uptime of blockchains is crucial for operators '
-        + 'as well as their investors as potential downtime could lead to loss '
-        + 'of funds and therefore loss of trust.',
-    how: 'Channels can be setup in the section below, you can configure as many'
-        + ' channels as you want. It is best to have multiple channels setup '
-        + 'to ensure an operator is reachable. Alerts will be sent to the '
-        + 'channels according to their specific blockchain and alert severity '
-        + 'level.',
+    what_1: 'Channels are used by PANIC to communicate with it\'s users.',
+    what_2: 'Channels allow for different modes of communication such as '
+          + 'directly calling your phone or sending messages on Telegram.',
+    what_3: 'Channels such as Telegram allow for commands to interact with'
+          + 'PANIC such as checking the state of PANIC.',
+    channel_1: 'Telegram: a cross-platform cloud-based instant messaging, video'
+             + ' calling, and VoIP service.',
+    channel_2: 'Twilio: allows software developers to programmatically '
+             + 'make and receive phone calls.',
+    channel_3: 'PagerDuty: a SaaS incident response platform for IT '
+             + 'departments.',
+    channel_4: 'OpsGenie: an advanced incident response orchestration platform '
+             + 'for DevOps and IT Teams.',
+    channel_5: 'Email: this can either be a private email server or one '
+             + 'provided by a company such as Google.',
+    how_1: 'Channels can be setup in the section below, you can configure as '
+         + 'many channels as you want.',
+    how_2: 'Once a channel is created it can be assigned to any blockchain you '
+         + 'want later on during the blockchain setup.',
+    how_3: 'Channels can be assigned to multiple blockchains meaning multiple '
+         + 'chains can send alerts to the same Telegram bot.',
+    how_4: 'Each channel has an option to select different alert severity '
+         + 'levels. These selections will indicate which alerts the channel is '
+         + 'going to receive.'
+  },
+  alerts:{
+    title: 'Types of Alerts',
+    info: 'INFO: little to zero severity but consists of information which is '
+        + 'still important to acknowledge.',
+    warning: 'WARNING: a less severe alert but which still requires attention '
+        + 'as it may be indicative of an incoming critical alert.',
+    critical: 'CRITICAL: the most severe alert and the type of alert that '
+        + 'should be dealt with as soon as possible.',
+    error: 'ERROR: This is a severe alert which indicates that something is '
+        + 'wrong with PANIC.',
   },
   telegram: {
     description: 'Alerts sent via Telegram are a fast and reliable means of alerting '
