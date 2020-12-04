@@ -52,7 +52,7 @@ export default {
     name: 'This will be used to identify the saved telegram configuration.',
     token: 'This is the API token of your created bot.',
     chatID: 'This is the chat identifier of your newely created bot.',
-    severties: 'Severties dictate which alerts will be sent to your chat.',
+    severities: 'Severities dictate which alerts will be sent to your chat.',
     commands: 'This will enable commands to be sent from telegram to PANIC.',
     alerts: 'This will enable alerts to be sent from PANIC to telegram.',
     botNamePlaceholder: 'telegram_chat_1',
@@ -65,7 +65,7 @@ export default {
     + 'asleep! To set these up, you have to have a Twilio account set up, '
     + 'with a registered Twilio phone number and a verified phone number.'
     + 'The timed trial version of Twilio is free.',
-    name: 'This will be used to identify the saved twilio configuration.',
+    name: 'This will be used to identify the saved Twilio configuration.',
     account: 'This is the account SID which can be found on your twilio dashboard.',
     token: 'This is the authentication token which can be found on your twilio dashboard.',
     phoneNumber: 'This is your twilio phone number which will be alerting you.',
@@ -82,7 +82,7 @@ export default {
     to: 'These are the email addresses which will be notified on set alerts.',
     username: 'The username used for SMTP authentication.',
     password: 'The password used for SMTP authentication.',
-    severties: 'Severties dictate which alerts will be sent to your email.',
+    severities: 'Severities dictate which alerts will be sent to your email.',
   },
   pagerDuty: {
     description: 'PagerDuty is an incident management platform that provides reliable '
@@ -91,7 +91,7 @@ export default {
     name: 'This will be used to identify the saved PagerDuty configuration.',
     token: 'This is your API token that will be used to send alerts to PagerDuty.',
     integrationKey: 'This key can be found on your PagerDuty dashboard.',
-    severties: 'Severties dictate which alerts will be sent to PagerDuty.',
+    severities: 'Severities dictate which alerts will be sent to PagerDuty.',
   },
   opsGenie: {
     description: 'Opsgenie is a modern incident management platform for operating '
@@ -99,6 +99,7 @@ export default {
     + 'disruptions and stay in control during incidents.',
     name: 'This will be used to identify the saved OpsGenie configuration.',
     token: 'This is your API token that will be used to send alerts to OpsGenie.',
-    severties: 'Severties dictate which alerts will be sent to OpsGenie.',
+    eu: 'If you are operating OpsGenie in the EU region please have this ticked.',
+    severities: 'Severities dictate which alerts will be sent to OpsGenie.',
   },
 };
