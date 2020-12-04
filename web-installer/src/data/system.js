@@ -12,6 +12,6 @@ export default {
   name: 'This will be used to identify the current System configuration.',
   name_holder: 'system_1_172.32.123.43',
   exporter_url_holder: 'http://176.67.65.56:9100',
-  exporterUrl: 'This is the node exporter url of your system.',
-  monitorSystem: 'Set to True if you want your system monitored.',
+  exporter_url: 'This is the node exporter url of your system.',
+  monitor_system: 'Set to True if you want your system monitored.',
 };
