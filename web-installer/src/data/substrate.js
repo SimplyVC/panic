@@ -1,7 +1,7 @@
 import {
   CHAINS_PAGE, CHANNELS_STEP, NODES_STEP, CHAINS_STEP, REPOSITORIES_STEP,
   ALERTS_STEP,
-} from '../constants/constants';
+} from 'constants/constants';
 
 export default {
   substrate: {
@@ -47,7 +47,7 @@ export default {
     prometheusHolder: 'http://122.321.32.12:26660',
     prometheusTip: 'This IP address will be used to monitor prometheus based '
       + 'statistics, if omitted they will not be monitored and alerted on.',
-    exporterUrlHolder: 'http://122,.321.32.12:9100',
+    exporterUrlHolder: 'http://122.321.32.12:9100',
     exporterUrlTip: 'This IP address will be used to monitor node exporter '
       + 'statistics, if omitted they will not be monitored and alerted on.',
     stashAddressHolder: 'EDDJBTFGdsg0gh8sd0sdsda2asd12dasdafs',
