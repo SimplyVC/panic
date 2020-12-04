@@ -90,7 +90,7 @@ export default {
     + 'to help teams detect and fix infrastructure problems quickly.',
     name: 'This will be used to identify the saved PagerDuty configuration.',
     token: 'This is your API token that will be used to send alerts to PagerDuty.',
-    integrationKey: 'This key can be found on your PagerDuty dashboard.',
+    integration_key: 'This key can be found on your PagerDuty dashboard.',
     severities: 'Severities dictate which alerts will be sent to PagerDuty.',
   },
   opsGenie: {
