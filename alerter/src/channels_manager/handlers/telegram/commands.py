@@ -7,7 +7,7 @@ from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi
-from telegram.ext import CommandHandler, MessageHandler, Filters
+from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
 
 class TelegramCommandsHandler(ChannelHandler):
@@ -32,13 +32,17 @@ class TelegramCommandsHandler(ChannelHandler):
             MessageHandler(Filters.command, self.cmd_handlers.unknown_callback)
         ]
 
-        # TODO: Todo continue from TleemgraCommandHandler (from beginning) in
-        #     : panic_polakdot class.
+        # Set up updater
+        self._updater = Updater(token=telegram_channel.telegram_bot.bot_token,
+                                use_context=True)
+
+        for handler in command_specific_handlers:
+            self._updater.dispatcher.add_handler(handler)
 
         # TODO: Must have it's own rabbit connection as this is in a separate
         #     : thread and may block. This must also check that the updater
         #     : thread is running and it must respond to heartbeats (similar to
-        #     : configs manager. If we do not manager to do this, block till we
+        #     : configs manager. If we do not manage to do this, block till we
         #     : get an exit signal.
 
         # TODO: Must also have graceful termination.
