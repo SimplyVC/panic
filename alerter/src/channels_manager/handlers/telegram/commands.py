@@ -1,4 +1,3 @@
-import json
 import logging
 import signal
 import sys
@@ -11,17 +10,15 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
-from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
     TelegramCommandHandlers
 from src.channels_manager.handlers.handler import ChannelHandler
-from src.data_store.redis import Keys
 from src.message_broker.rabbitmq import RabbitMQApi
-# from src.utils import env
+from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
-from src.utils.logging import log_and_print, create_logger
+from src.utils.logging import log_and_print
 
 
 class TelegramCommandsHandler(ChannelHandler):
@@ -54,15 +51,14 @@ class TelegramCommandsHandler(ChannelHandler):
         for handler in command_specific_handlers:
             self._updater.dispatcher.add_handler(handler)
 
-        # rabbit_ip = env.RABBIT_IP
-        rabbit_ip = 'localhost'
+        rabbit_ip = env.RABBIT_IP
         self._rabbitmq = RabbitMQApi(logger=self.logger.getChild('rabbitmq'),
                                      host=rabbit_ip)
 
         # Handle termination signals by stopping the handler gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
-        # signal.signal(signal.SIGHUP, self.on_terminate)
+        signal.signal(signal.SIGHUP, self.on_terminate)
 
     @property
     def cmd_handlers(self) -> TelegramCommandHandlers:
@@ -118,6 +114,7 @@ class TelegramCommandsHandler(ChannelHandler):
 
     def _start_handling(self, run_in_background: bool = False) -> None:
         # Start polling
+        self.logger.info("Started handling commands.")
         self._updater.start_polling(clean=True)
 
         # Run the bot until you press Ctrl-C or the process receives SIGINT,
@@ -192,36 +189,5 @@ class TelegramCommandsHandler(ChannelHandler):
         self._stop_handling()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
-
-
-test_logger = create_logger('test.log', 'test', 'DEBUG', rotating=True)
-bot_token = '1214185733:AAF-78AENtsYXxxdqTL3Ip987N7gmIKJaBE'
-chat_id = '933795729'
-associated_chains = {'kusama_12345': 'Kusama_ah', 'polkadot_12345': 'Polkadot',
-                     'akala_12345': 'Akala'}
-telegram_bot = TelegramBotApi(bot_token, chat_id)
-telegram_channel = TelegramChannel('test_channel', 'channel12345', test_logger,
-                                   telegram_bot)
-tch = TelegramCommandsHandler(test_logger, 'Telegram Commands Handler',
-                              associated_chains, telegram_channel)
-
-# key_heartbeat = Keys.get_component_heartbeat('Heartbeat Handler')
-# handler_heartbeat = {'component_name': 'Heartbeat Handler',
-#                      'timestamp': datetime.now().timestamp()}
-# transformed_handler_heartbeat = json.dumps(handler_heartbeat)
-# tch.cmd_handlers.redis.set(key_heartbeat, transformed_handler_heartbeat)
-#
-# key_heartbeat = Keys.get_component_heartbeat('Ping Publisher')
-# ping_pub_heartbeat = {'component_name': 'Ping Publisher',
-#                       'timestamp': datetime.now().timestamp()}
-# transformed_ping_pub_heartbeat = json.dumps(ping_pub_heartbeat)
-# tch.cmd_handlers.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
-
-while True:
-    try:
-        tch.start()
-    except Exception as e:
-        pass
-
 
 # TODO: Need to clean up commented code and test code
