@@ -1,3 +1,4 @@
+import json
 import logging
 import signal
 import sys
@@ -15,6 +16,7 @@ from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
     TelegramCommandHandlers
 from src.channels_manager.handlers.handler import ChannelHandler
+from src.data_store.redis import Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 # from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
@@ -195,7 +197,7 @@ class TelegramCommandsHandler(ChannelHandler):
 test_logger = create_logger('test.log', 'test', 'DEBUG', rotating=True)
 bot_token = '1214185733:AAF-78AENtsYXxxdqTL3Ip987N7gmIKJaBE'
 chat_id = '933795729'
-associated_chains = {'kusama_12345': 'Kusama', 'polkadot_12345': 'Polkadot',
+associated_chains = {'kusama_12345': 'Kusama_ah', 'polkadot_12345': 'Polkadot',
                      'akala_12345': 'Akala'}
 telegram_bot = TelegramBotApi(bot_token, chat_id)
 telegram_channel = TelegramChannel('test_channel', 'channel12345', test_logger,
@@ -203,10 +205,23 @@ telegram_channel = TelegramChannel('test_channel', 'channel12345', test_logger,
 tch = TelegramCommandsHandler(test_logger, 'Telegram Commands Handler',
                               associated_chains, telegram_channel)
 
+# key_heartbeat = Keys.get_component_heartbeat('Heartbeat Handler')
+# handler_heartbeat = {'component_name': 'Heartbeat Handler',
+#                      'timestamp': datetime.now().timestamp()}
+# transformed_handler_heartbeat = json.dumps(handler_heartbeat)
+# tch.cmd_handlers.redis.set(key_heartbeat, transformed_handler_heartbeat)
+#
+# key_heartbeat = Keys.get_component_heartbeat('Ping Publisher')
+# ping_pub_heartbeat = {'component_name': 'Ping Publisher',
+#                       'timestamp': datetime.now().timestamp()}
+# transformed_ping_pub_heartbeat = json.dumps(ping_pub_heartbeat)
+# tch.cmd_handlers.redis.set(key_heartbeat, transformed_ping_pub_heartbeat)
+
 while True:
     try:
         tch.start()
     except Exception as e:
         pass
+
 
 # TODO: Need to clean up commented code and test code
