@@ -14,8 +14,6 @@ from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
     TelegramCommandHandlers
 from src.channels_manager.handlers.handler import ChannelHandler
-from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -51,10 +49,6 @@ class TelegramCommandsHandler(ChannelHandler):
         for handler in command_specific_handlers:
             self._updater.dispatcher.add_handler(handler)
 
-        rabbit_ip = env.RABBIT_IP
-        self._rabbitmq = RabbitMQApi(logger=self.logger.getChild('rabbitmq'),
-                                     host=rabbit_ip)
-
         # Handle termination signals by stopping the handler gracefully
         signal.signal(signal.SIGTERM, self.on_terminate)
         signal.signal(signal.SIGINT, self.on_terminate)
@@ -63,10 +57,6 @@ class TelegramCommandsHandler(ChannelHandler):
     @property
     def cmd_handlers(self) -> TelegramCommandHandlers:
         return self._cmd_handlers
-
-    @property
-    def rabbitmq(self) -> RabbitMQApi:
-        return self._rabbitmq
 
     @property
     def telegram_channel(self) -> TelegramChannel:
@@ -180,7 +170,6 @@ class TelegramCommandsHandler(ChannelHandler):
                 raise e
 
     def on_terminate(self, signum: int, stack: FrameType) -> None:
-        pass
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will "
                       "exit.".format(self), self.logger)
