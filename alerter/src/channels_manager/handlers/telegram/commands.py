@@ -189,5 +189,3 @@ class TelegramCommandsHandler(ChannelHandler):
         self._stop_handling()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
-
-# TODO: Need to clean up commented code and test code
