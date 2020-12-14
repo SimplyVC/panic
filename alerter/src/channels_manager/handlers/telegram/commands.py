@@ -20,7 +20,7 @@ from src.utils.logging import log_and_print
 
 
 class TelegramCommandsHandler(ChannelHandler):
-    def __init__(self, logger: logging.Logger, handler_name: str,
+    def __init__(self, handler_name: str, logger: logging.Logger,
                  associated_chains: Dict, telegram_channel: TelegramChannel) \
             -> None:
         super().__init__(handler_name, logger)
