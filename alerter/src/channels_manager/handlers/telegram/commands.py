@@ -1,5 +1,4 @@
 import logging
-import signal
 import sys
 from datetime import datetime
 from types import FrameType
@@ -21,14 +20,20 @@ from src.utils.logging import log_and_print
 
 class TelegramCommandsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 associated_chains: Dict, telegram_channel: TelegramChannel) \
-            -> None:
-        super().__init__(handler_name, logger)
+                 rabbit_ip: str,  redis_ip: str, redis_db: int, redis_port: int,
+                 unique_alerter_identifier: str, mongo_ip: str, mongo_db: str,
+                 mongo_port: int, associated_chains: Dict,
+                 telegram_channel: TelegramChannel) -> None:
+        super().__init__(handler_name, logger, rabbit_ip)
 
         self._telegram_channel = telegram_channel
+        self._telegram_commands_handler_queue = \
+            'telegram_{}_commands_handler_queue'.format(
+                self.telegram_channel.channel_id)
         self._cmd_handlers = TelegramCommandHandlers(
-            'Telegram Command Handlers', logger, associated_chains,
-            telegram_channel)
+            'Telegram Command Handlers', logger, rabbit_ip, redis_ip, redis_db,
+            redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
+            mongo_port, associated_chains, telegram_channel)
 
         command_specific_handlers = [
             CommandHandler('start', self.cmd_handlers.start_callback),
@@ -49,11 +54,6 @@ class TelegramCommandsHandler(ChannelHandler):
         for handler in command_specific_handlers:
             self._updater.dispatcher.add_handler(handler)
 
-        # Handle termination signals by stopping the handler gracefully
-        signal.signal(signal.SIGTERM, self.on_terminate)
-        signal.signal(signal.SIGINT, self.on_terminate)
-        signal.signal(signal.SIGHUP, self.on_terminate)
-
     @property
     def cmd_handlers(self) -> TelegramCommandHandlers:
         return self._cmd_handlers
@@ -70,22 +70,18 @@ class TelegramCommandsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
         self.logger.info(
-            "Creating queue 'telegram_{}_commands_handler_queue'".format(
-                self.telegram_channel.channel_id))
-        self.rabbitmq.queue_declare('telegram_{}_commands_handler_queue'.format(
-            self.telegram_channel.channel_id), False, True, False, False)
-        self.logger.info("Binding queue 'telegram_{}_commands_handler_queue' "
-                         "to exchange '{}' with routing key "
-                         "'ping'".format(self.telegram_channel.channel_id,
+            "Creating queue '{}'".format(self._telegram_commands_handler_queue))
+        self.rabbitmq.queue_declare(self._telegram_commands_handler_queue,
+                                    False, True, False, False)
+        self.logger.info("Binding queue '{}' to exchange '{}' with routing key "
+                         "'ping'".format(self._telegram_commands_handler_queue,
                                          HEALTH_CHECK_EXCHANGE))
-        self.rabbitmq.queue_bind('telegram_{}_commands_handler_queue'.format(
-            self.telegram_channel.channel_id), HEALTH_CHECK_EXCHANGE, 'ping')
+        self.rabbitmq.queue_bind(self._telegram_commands_handler_queue,
+                                 HEALTH_CHECK_EXCHANGE, 'ping')
         self.logger.info("Declaring consuming intentions on "
-                         "'telegram_{}_commands_handler_queue'"
-                         .format(self.telegram_channel.channel_id))
-        self.rabbitmq.basic_consume('telegram_{}_commands_handler_queue'.format(
-            self.telegram_channel.channel_id), self._process_ping, True, False,
-            None)
+                         "'{}'".format(self._telegram_commands_handler_queue))
+        self.rabbitmq.basic_consume(self._telegram_commands_handler_queue,
+                                    self._process_ping, True, False, None)
 
         # Declare publishing intentions
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -178,3 +174,9 @@ class TelegramCommandsHandler(ChannelHandler):
         self._stop_handling()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
+
+    def _process_alert(self, ch: BlockingChannel,
+                       method: pika.spec.Basic.Deliver,
+                       properties: pika.spec.BasicProperties,
+                       body: bytes) -> None:
+        pass
