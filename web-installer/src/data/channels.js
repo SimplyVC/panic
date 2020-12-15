@@ -55,7 +55,7 @@ export default {
     severities: 'Severities dictate which alerts will be sent to your chat.',
     commands: 'This will enable commands to be sent from telegram to PANIC.',
     alerts: 'This will enable alerts to be sent from PANIC to telegram.',
-    bot_namePlaceholder: 'telegram_chat_1',
+    channel_namePlaceholder: 'telegram_chat_1',
     botTokenPlaceholder: '123456789:ABCDEF-1234abcd5678efgh12345_abc123',
     chatIdPlaceholder: '-1231213121',
   },
