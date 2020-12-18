@@ -51,7 +51,7 @@ export default {
     + 'call alerts and to get the alerter\'s current status from Telegram. ',
     name: 'This will be used to identify the saved telegram configuration.',
     token: 'This is the API token of your created bot.',
-    chat_id: 'This is the chat identifier of your newely created bot.',
+    chat_id: 'This is the chat identifier of your newly created bot.',
     severities: 'Severities dictate which alerts will be sent to your chat.',
     commands: 'This will enable commands to be sent from telegram to PANIC.',
     alerts: 'This will enable alerts to be sent from PANIC to telegram.',

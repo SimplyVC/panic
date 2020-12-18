@@ -34,7 +34,7 @@ export default {
     nameHolder: 'Cosmos_KMS_Config_1',
     nameTip: 'This will be used to identify the current KMS configuration.',
     exporterUrlTip: 'This is your node exporter URL, if you visit the system '
-      + 'running KMS at the {IP_Addrees}:9100/metrics you should be able to'
+      + 'running KMS at the {IP_Address}:9100/metrics you should be able to'
       + 'see a list of metrics in Prometheus format.',
     monitorKmsTip: 'Enable if you want this KMS configuration to be monitored.',
     backStep: REPOSITORIES_STEP,
