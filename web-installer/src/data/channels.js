@@ -34,27 +34,30 @@ export default {
       'Once a channel is created it can be assigned to any blockchain you '
       + 'want later on during the blockchain setup.',
     how_3:
-      'Channels can be assigned to multiple blockchains meaning multiple '
+      'Channels can be assigned to multiple blockchains for example multiple '
       + 'chains can send alerts to the same Telegram bot.',
     how_4:
-      'Each channel has an option to select different alert severity '
+      'For each channel, you have  the option to select different alert severities '
       + 'levels. These selections will indicate which alerts the channel is '
       + 'going to receive.',
   },
   alerts: {
     title: 'Types of Alerts',
     info:
-      'INFO: little to zero severity but consists of information which is '
-      + 'still important to acknowledge.',
+      "INFO: Alerts of this type have little to zero severity but consists of information '"
+      + 'which is still important to acknowledge. Info alerts also include positive events. '
+      + " **Example**: System's storage usage is no longer at a critical level.",
     warning:
-      'WARNING: a less severe alert but which still requires attention '
-      + 'as it may be indicative of an incoming critical alert.',
+      'WARNING: A less severe alert type but which still requires attention as it may be a '
+      + "warning of an incoming critical alert. **Example**: System's storage usage reached 85%.",
     critical:
-      'CRITICAL: the most severe alert and the type of alert that '
-      + 'should be dealt with as soon as possible.',
+      'CRITICAL: Alerts of this type are the most severe. Such alerts are raised to inform the '
+      + 'node operator of a situation which requires immediate action. **Example**: '
+      + "System's storage usage reached 100%.",
     error:
-      'ERROR: This is a severe alert which indicates that something is '
-      + 'wrong with PANIC.',
+      'ERROR: Alerts of this type are triggered by abnormal events and ranges from zero to high '
+      + 'severity based on the error that has occurred and how many times it is triggered. '
+      + '**Example**: Cannot access GitHub page alert.',
   },
   telegram: {
     description:
