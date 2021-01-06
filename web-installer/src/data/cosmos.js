@@ -4,7 +4,6 @@ import {
   NODES_STEP,
   REPOSITORIES_STEP,
   CHAINS_STEP,
-  KMS_STEP,
   ALERTS_STEP,
 } from 'constants/constants';
 
@@ -103,7 +102,7 @@ export default {
       + 'have to enter tendermint/tendermint/.',
     monitorTip: 'Set True if you want to monitor this repository.',
     backStep: NODES_STEP,
-    nextStep: KMS_STEP,
+    nextStep: CHANNELS_STEP,
   },
   channelsTable: {
     title: 'Choose Channels',
