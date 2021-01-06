@@ -46,18 +46,18 @@ export default {
     info:
       "INFO: Alerts of this type have little to zero severity but consists of information '"
       + 'which is still important to acknowledge. Info alerts also include positive events. '
-      + " **Example**: System's storage usage is no longer at a critical level.",
+      + "Example: System's storage usage is no longer at a critical level.",
     warning:
       'WARNING: A less severe alert type but which still requires attention as it may be a '
-      + "warning of an incoming critical alert. **Example**: System's storage usage reached 85%.",
+      + "warning of an incoming critical alert. Example: System's storage usage reached 85%.",
     critical:
       'CRITICAL: Alerts of this type are the most severe. Such alerts are raised to inform the '
-      + 'node operator of a situation which requires immediate action. **Example**: '
+      + 'node operator of a situation which requires immediate action. Example: '
       + "System's storage usage reached 100%.",
     error:
       'ERROR: Alerts of this type are triggered by abnormal events and ranges from zero to high '
       + 'severity based on the error that has occurred and how many times it is triggered. '
-      + '**Example**: Cannot access GitHub page alert.',
+      + 'Example: Cannot access GitHub page alert.',
   },
   telegram: {
     description:

@@ -14,9 +14,10 @@ export default {
   chainForm: {
     title: 'Chain Name Setup',
     description:
-      'We will now go through the setup process of a Substrate based'
-      + ' chain. Firstly you will enter the unique identifier of this '
-      + 'chain. It should infer the types of nodes you will be '
+      'We will now go through the setup process of a Substrate based '
+      + 'chain. Firstly, you will enter the unique identifier of this chain. '
+      + 'The unique identifier is the name of the chain the nodes to be monitored '
+      + 'belong to. It should infer the types of nodes you will be '
       + 'monitoring. If you are going to be monitoring Polkadot nodes '
       + "then the identifier should be Polkadot and you shouldn't "
       + 'add nodes which do not belong to the Polkadot blockchain. For '
@@ -80,7 +81,7 @@ export default {
       + 'You must enter the path of the repository with a trailing '
       + 'forward slash, so if you want to monitor '
       + 'https://github.com/paritytech/substrate/ you will need to '
-      + 'enter paritytech/substrate/ into the Field below.',
+      + 'enter paritytech/substrate/ into the field below.',
     nameHolder: 'paritytech/substrate/',
     nameTip:
       'This is the path of the repository that will be monitored. E.g: '
@@ -93,9 +94,9 @@ export default {
   channelsTable: {
     title: 'Choose Channels',
     description:
-      'Choose to which channels you would like this chain to send '
-      + 'alerts to. You can select as many configurations as you want '
-      + 'from as many channels as you want.',
+      'Choose to which channels, alerts belonging to the added chain should be forwarded to. '
+      + 'For the same chain, you can select as many channel configurations from as many '
+      + 'channels as you want.',
     empty:
       "You haven't setup any channels! You will not be alerted on this "
       + 'chain!',

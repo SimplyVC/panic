@@ -16,14 +16,12 @@ export default {
     title: 'Chain Name Setup',
     description:
       'We will now go through the setup process of a Cosmos based '
-      + 'chain. Firstly you will enter the unique identifier of this '
-      + 'chain. It should infer the types of nodes you will be '
-      + 'monitoring. If you are going to be monitoring Cosmos nodes '
-      + "then the identifier should be Cosmos and you shouldn't "
-      + 'add nodes which do not belong to the Cosmos blockchain. For '
-      + 'example do not setup Oasis nodes under the Kava chain '
-      + 'but setup a chain for Kava and a chain for Oasis and add  '
-      + 'respective nodes underneath them.',
+      + 'chain. Firstly, you will enter the unique identifier of this chain. '
+      + 'The unique identifier is the name of the chain the nodes to be monitored '
+      + 'belong to. It should infer the types of nodes you will be '
+      + 'monitoring. For example, do not set-up Kava nodes under the Cosmos chain, '
+      + 'but set-up a chain for Kava and a chain for Cosmos and add the respective '
+      + 'nodes underneath them.',
     placeholder: 'cosmos',
     tooltip:
       'This will be used to identify the current chain that you are '
@@ -34,16 +32,16 @@ export default {
   kmsForm: {
     title: 'KMS Setup',
     description:
-      'Here you will monitor you Key Management System(KMS), for now'
-      + ' there is no direct Prometheus monitoring of the KMS system '
-      + 'so for now you will monitor the System of the running'
+      'Here you will monitor you Key Management System(KMS), for now '
+      + 'there is no direct Prometheus monitoring of the KMS system. '
+      + 'Therefore for now you will monitor the System of the running '
       + 'KMS software through Node Exporter.',
     exporterUrlHolder: 'http://176.67.65.56:9100',
     nameHolder: 'Cosmos_KMS_Config_1',
     nameTip: 'This will be used to identify the current KMS configuration.',
     exporterUrlTip:
       'This is your node exporter URL, if you visit the system '
-      + 'running KMS at the {IP_Address}:9100/metrics you should be able to'
+      + 'running KMS at {IP_Address}:9100/metrics you should be able to'
       + 'see a list of metrics in Prometheus format.',
     monitorKmsTip: 'Enable if you want this KMS configuration to be monitored.',
     backStep: REPOSITORIES_STEP,
@@ -97,7 +95,7 @@ export default {
       + 'You must enter the path of the repository with a trailing '
       + 'forward slash, so if you want to monitor '
       + 'https://github.com/tendermint/tendermint/ you will need to '
-      + 'enter tendermint/tendermint/ into the Field below.',
+      + 'enter tendermint/tendermint/ into the field below.',
     nameHolder: 'tendermint/tendermint/',
     nameTip:
       'This is the path of the repository that will be monitored. E.g: '
@@ -110,9 +108,9 @@ export default {
   channelsTable: {
     title: 'Choose Channels',
     description:
-      'Choose to which channels you would like this chain to send '
-      + 'alerts to. You can select as many configurations as you want '
-      + 'from as many channels as you want.',
+      'Choose to which channels, alerts belonging to the added chain should be forwarded to. '
+      + 'For the same chain, you can select as many channel configurations from as many '
+      + 'channels as you want.',
     empty:
       "You haven't setup any channels! You will not be alerted on this "
       + 'chain!',

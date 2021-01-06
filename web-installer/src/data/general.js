@@ -42,9 +42,9 @@ export default {
   channelsTable: {
     title: 'Choose Channels',
     description:
-      'Choose to which channels you would like this chain to send '
-      + 'alerts to. You can select as many configurations as you want '
-      + 'from as many channels as you want.',
+      'Choose the channels which should receive alerts related to general repositories '
+      + 'and systems, and the periodic alive reminder You can select as many configurations '
+      + 'as you want from as many channels as you want.',
     empty:
       "You haven't setup any channels! You will not be alerted on this "
       + 'chain!',

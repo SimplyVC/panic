@@ -6,7 +6,7 @@ export default {
     + 'previously setup nodes running on them but you would still '
     + "want the system's metrics monitored. For example you can "
     + "monitor the system that is running PANIC! The System's metrics"
-    + ' are monitored through Node Exporter so that will need to be '
+    + ' are monitored through Node Exporter, so that will need to be '
     + 'installed on each system you want to monitor. A suggestion is '
     + "to give your configuration a name that includes the system's "
     + 'IP address such as system_1_172.32.123.43 .',
