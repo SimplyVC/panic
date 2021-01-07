@@ -78,8 +78,8 @@ class TelegramCommandsHandler(ChannelHandler):
                                          HEALTH_CHECK_EXCHANGE))
         self.rabbitmq.queue_bind(self._telegram_commands_handler_queue,
                                  HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'{}'".format(self._telegram_commands_handler_queue))
+        self.logger.debug("Declaring consuming intentions on "
+                          "'{}'".format(self._telegram_commands_handler_queue))
         self.rabbitmq.basic_consume(self._telegram_commands_handler_queue,
                                     self._process_ping, True, False, None)
 
