@@ -31,8 +31,9 @@ class TelegramCommandsHandler(ChannelHandler):
             'telegram_{}_commands_handler_queue'.format(
                 self.telegram_channel.channel_id)
         self._cmd_handlers = TelegramCommandHandlers(
-            'Telegram Command Handlers', logger, rabbit_ip, redis_ip, redis_db,
-            redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
+            'Telegram Command Handlers', logger.getChild(
+                TelegramCommandHandlers.__name__), rabbit_ip, redis_ip,
+            redis_db, redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
             mongo_port, associated_chains, telegram_channel)
 
         command_specific_handlers = [
