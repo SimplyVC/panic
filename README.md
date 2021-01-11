@@ -30,7 +30,8 @@ We will guide you through the steps required to get PANIC up and running. We rec
 
 ## Installation
 
-**TIP**: If you're terminal is telling you that you do not have permissions to run a command try adding `sudo` to your command e.g `sudo docker --version` this will run your command as root.
+**TIP**: If you're terminal is telling you that you do not have permissions to run a command try adding `sudo` to your command e.g `sudo docker --version` this will run your command as root. If you have any issues during the installation procedure check out the [FAQ](./docs/FAQ.md)
+section.
 
 ### Git Installation
 
