@@ -106,6 +106,8 @@ Once you have everything setup, you can start PANIC by running the below command
 
 ```
 docker-compose up -d --build
+```bash
+docker-compose up -d --build
 ```
 
 Now you will have to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. To do this you will have to navigate to the running web-installer. This can be found on 
