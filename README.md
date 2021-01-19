@@ -65,7 +65,7 @@ docker --version
 docker-compose --version
 ```
 
-These should give you the current versions of the softwares that have been installed.
+These should give you the current versions of the software that have been installed.
 
 #### Configuration Setup
 
@@ -77,7 +77,7 @@ cd panic
 
 **Optional but recommended for maximum security**
 
-Apply your own SSL certificate signed by a certificate authority. The SSL certificate (cert.pem) and the key (key.pem) should be inputted in the `panic/certificates` folder, and they should replace the existing dummy files. Note that these dummy files were given just for convenience as the UI server won't start without them, however, for maximum security these must be replaced.
+Apply your own SSL certificate signed by a certificate authority. The SSL certificate (cert.pem) and the key (key.pem) should be placed in the `panic/certificates` folder, and they should replace the existing dummy files. Note that these dummy files were given just for convenience as the Installer server won't start without them, however, for maximum security these must be replaced.
 
 We suggest reading [this](https://nodejs.org/en/knowledge/HTTP/servers/how-to-create-a-HTTPS-server/) for more details on SSL certificates, and how to generate a self signed certificate in case you do not want to obtain a certificate signed by a certificate authority. However, for maximum security, the self signed certificate option is not recommended.
 
