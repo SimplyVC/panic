@@ -19,14 +19,15 @@ We will now guide you through the steps required to get PANIC up and running. We
 As you will notice below, PANIC supports many alerting channels. It is recommended that at least one of the alerting channels mentioned in the requirements section is set-up.
 
 ### Requirements
+- **Git** command line tools. [Click here](#git-installation) if you want a guide to set it up.
+- **Docker** and **Docker Compose**: This installation guide uses Docker and Docker Compose to run PANIC, these will need to be installed. [Click here](#docker-and-docker-compose-installation) if you want a guide to set it up.
 
-**Optional**: **Node Exporter**, this will be used to monitor the systems on which the nodes are running. If you want your nodes' systems to be monitored this step is no longer optional. Node Exporter must also be installed on each machine that you want to monitor. [Click here](#node-exporter-setup) if you want a guide to set it up.
-- **Optional**: **Telegram account and bots**, for Telegram alerts and commands. [Click here](#telegram-setup) if you want a guide to set it up.
-- **Optional**: **Twilio account**, for phone call alerts. [Click here](#twilio-setup) if you want a guide to set it up.
-- **Optional**: **PagerDuty account**, for notifications and phone call alerts. [Click here](#pagerduty-setup) if you want a guide to set it up.
-- **Optional**: **OpsGenie account**, for notifications and phone call alerts. [Click here](#opsgenie-setup) if you want a guide to set it up.
-- **Required**: Git command line tools. [Click here](#git-installation) if you want a guide to set it up.
-- **Required**: This installation guide uses Docker and Docker Compose to run PANIC, these will need to be installed. [Click here](#docker-and-docker-compose-installation) if you want a guide to set it up.
+#### Optional
+- **Node Exporter**, this will be used to monitor the systems on which the nodes are running. If you want your nodes' systems to be monitored this step is no longer optional. Node Exporter must also be installed on each machine that you want to monitor. [Click here](#node-exporter-setup) if you want a guide to set it up.
+- **Telegram account and bots**, for Telegram alerts and commands. [Click here](#telegram-setup) if you want a guide to set it up.
+- **Twilio account**, for phone call alerts. [Click here](#twilio-setup) if you want a guide to set it up.
+- **PagerDuty account**, for notifications and phone call alerts. [Click here](#pagerduty-setup) if you want a guide to set it up.
+- **OpsGenie account**, for notifications and phone call alerts. [Click here](#opsgenie-setup) if you want a guide to set it up.
 
 ### Installation
 
