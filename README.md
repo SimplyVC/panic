@@ -39,11 +39,11 @@ As you will notice below, PANIC supports many alerting channels. It is recommend
 
 Firstly we will install and verify your Git installation.
 
-```
+```bash
 # Install Git
 sudo apt install git
 
-# Verify your git installation
+# Verify that git is now installed
 git --version
 ```
 
