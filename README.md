@@ -156,7 +156,7 @@ sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 sudo rm node_exporter-0.18.1.linux-amd64 -rf
 sudo nano /etc/systemd/system/node_exporter.service
 ```
-```
+```ini
 [Unit]
 Description=Node Exporter
 Wants=network-online.target
