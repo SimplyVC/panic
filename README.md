@@ -83,7 +83,7 @@ We suggest reading [this](https://nodejs.org/en/knowledge/HTTP/servers/how-to-cr
 
 Now that you're in inside the PANIC directory, open up the .env file and change the fields of `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` to your preferred but secure choice. This is to ensure that when configuring PANIC through the web-installer no one else can access it.
 
-```
+```bash
 # This will access the .env file on your terminal
 nano .env
 ```
