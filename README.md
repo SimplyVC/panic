@@ -55,7 +55,7 @@ This should give you the current version of git that has been installed.
 
 First, install Docker and Docker Compose by running these commands on your terminal.
 
-```
+```bash
 # Install docker and docker-compose
 curl -sSL https://get.docker.com/ | sh
 sudo apt install docker-compose -y
