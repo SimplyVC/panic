@@ -104,8 +104,6 @@ Then to exit hit the following keys:
 
 Once you have everything setup, you can start PANIC by running the below command:
 
-```
-docker-compose up -d --build
 ```bash
 docker-compose up -d --build
 ```
