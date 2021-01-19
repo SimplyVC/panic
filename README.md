@@ -146,8 +146,6 @@ sudo cp node_exporter-0.18.1.linux-amd64/node_exporter /usr/local/bin/
 
 ##### Give the Node Exporter user ownership of the executable:
 
-```
-sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 ```bash
 sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 ```
