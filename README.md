@@ -140,7 +140,7 @@ tar -xzvf node_exporter-0.18.1.linux-amd64.tar.gz
 
 ##### Send the executable to /usr/local/bin:
 
-```
+```bash
 sudo cp node_exporter-0.18.1.linux-amd64/node_exporter /usr/local/bin/
 ```
 
