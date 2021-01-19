@@ -174,7 +174,7 @@ WantedBy=multi-user.target
 
 ##### Reload systemctl services list, start the service and enable it to have it start on system restart:
 
-```
+```bash
 sudo systemctl daemon-reload
 sudo systemctl start node_exporter
 sudo systemctl enable node_exporter
