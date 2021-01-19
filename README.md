@@ -69,7 +69,7 @@ These should give you the current versions of the softwares that have been insta
 
 #### Configuration Setup
 
-```
+```bash
 # Clone the panic repository and navigate into it
 git clone https://github.com/SimplyVC/panic
 cd panic
