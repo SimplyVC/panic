@@ -47,7 +47,7 @@ sudo apt install git
 git --version
 ```
 
-This should give you the current version of the software that has been installed.
+This should give you the current version of git that has been installed.
 
 #### Docker and Docker Compose Installation
 
