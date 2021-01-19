@@ -90,7 +90,7 @@ nano .env
 
 Once inside change `admin` and `password` to different values. Here is an example:
 
-```
+```ini
 INSTALLER_USERNAME=panic_operator
 INSTALLER_PASSWORD=wowthisisasecurepassword
 ```
