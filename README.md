@@ -1,10 +1,10 @@
-# PANIC Monitoring and Alerting for Blockchains!
+# PANIC Monitoring and Alerting for Blockchains
 
 **NOTE**: PANIC currently only alerts on System metrics and GitHub repository releases. Blockchain monitoring and alerting is coming soon!
 
 <img src="docs/images/PANIC_BANNER.png" alt="PANIC Banner"/>
 
-PANIC is an open source monitoring and alerting solution for Cosmos-SDK and Substrate based nodes by [SimplyVC](https://simply-vc.com.mt/). The tool was built with user friendliness in mind, and comes with numerous features such as phone calls for critical alerts, a Web-UI installation process and Telegram commands for increased control over your alerter.
+PANIC is an open source monitoring and alerting solution for Cosmos-SDK and Substrate based nodes by [Simply VC](https://simply-vc.com.mt/). The tool was built with user friendliness in mind, and comes with numerous features such as phone calls for critical alerts, a Web-UI installation process and Telegram commands for increased control over your alerter.
 
 We are sure that PANIC will be beneficial for node operators and we look forward for feedback. Feel free to read on if you are interested in the design of the alerter, if you wish to try it out, or if you would like to support and contribute to this open source project.
 
