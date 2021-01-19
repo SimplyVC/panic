@@ -127,7 +127,7 @@ Congratulations you should have PANIC up and running!
 
 ##### Create a Node Exporter user for running the exporter:
 
-```
+```bash
 sudo useradd --no-create-home --shell /bin/false node_exporter
 ```
 
