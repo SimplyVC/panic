@@ -133,7 +133,7 @@ sudo useradd --no-create-home --shell /bin/false node_exporter
 
 ##### Download and extract the latest version of Node Exporter:
 
-```
+```bash
 wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-amd64.tar.gz
 tar -xzvf node_exporter-0.18.1.linux-amd64.tar.gz
 ```
