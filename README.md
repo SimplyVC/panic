@@ -96,14 +96,9 @@ INSTALLER_PASSWORD=wowthisisasecurepassword
 ```
 
 Then to exit hit the following keys:
-```
-# This will exit your .env file
-CTRL + x
-# This will select yes to save your modified file
-Y
-# Confirm file name and exit
-ENTER
-```
+ 1. To exit your .env file: <kbd>CTRL</kbd> + <kbd>X</kbd>
+ 2. To select yes to save your modified file: <kbd>Y</kbd>
+ 3. To confirm the file name and exit: <kbd>ENTER</kbd>
 
 **Running PANIC**
 
