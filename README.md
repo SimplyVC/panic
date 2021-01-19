@@ -152,7 +152,7 @@ sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 
 ##### Perform some cleanup and create and save a Node Exporter service with the below contents:
 
-```
+```bash
 sudo rm node_exporter-0.18.1.linux-amd64 -rf
 sudo nano /etc/systemd/system/node_exporter.service
 ```
