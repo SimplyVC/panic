@@ -17,6 +17,8 @@ from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
+_TCH_INPUT_ROUTING_KEY = 'ping'
+
 
 class TelegramCommandsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
@@ -31,16 +33,17 @@ class TelegramCommandsHandler(ChannelHandler):
             'telegram_{}_commands_handler_queue'.format(
                 self.telegram_channel.channel_id)
         self._cmd_handlers = TelegramCommandHandlers(
-            'Telegram Command Handlers', logger, rabbit_ip, redis_ip, redis_db,
-            redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
+            'Telegram Command Handlers', logger.getChild(
+                TelegramCommandHandlers.__name__), rabbit_ip, redis_ip,
+            redis_db, redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
             mongo_port, associated_chains, telegram_channel)
 
         command_specific_handlers = [
             CommandHandler('start', self.cmd_handlers.start_callback),
             CommandHandler('mute', self.cmd_handlers.mute_callback),
             CommandHandler('unmute', self.cmd_handlers.unmute_callback),
-            CommandHandler('mute_all', self.cmd_handlers.mute_all_callback),
-            CommandHandler('unmute_all', self.cmd_handlers.unmute_all_callback),
+            CommandHandler('muteall', self.cmd_handlers.muteall_callback),
+            CommandHandler('unmuteall', self.cmd_handlers.unmuteall_callback),
             CommandHandler('status', self.cmd_handlers.status_callback),
             CommandHandler('ping', self.cmd_handlers.ping_callback),
             CommandHandler('help', self.cmd_handlers.help_callback),
@@ -66,20 +69,20 @@ class TelegramCommandsHandler(ChannelHandler):
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
-        self.logger.info("Creating '{}' exchange".format(HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
-        self.logger.info(
-            "Creating queue '{}'".format(self._telegram_commands_handler_queue))
+        self.logger.info("Creating queue '%s'",
+                         self._telegram_commands_handler_queue)
         self.rabbitmq.queue_declare(self._telegram_commands_handler_queue,
                                     False, True, False, False)
-        self.logger.info("Binding queue '{}' to exchange '{}' with routing key "
-                         "'ping'".format(self._telegram_commands_handler_queue,
-                                         HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
+                         "'%s'", self._telegram_commands_handler_queue,
+                         HEALTH_CHECK_EXCHANGE, _TCH_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._telegram_commands_handler_queue,
-                                 HEALTH_CHECK_EXCHANGE, 'ping')
-        self.logger.info("Declaring consuming intentions on "
-                         "'{}'".format(self._telegram_commands_handler_queue))
+                                 HEALTH_CHECK_EXCHANGE, _TCH_INPUT_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions on '%s'",
+                          self._telegram_commands_handler_queue)
         self.rabbitmq.basic_consume(self._telegram_commands_handler_queue,
                                     self._process_ping, True, False, None)
 
@@ -92,8 +95,7 @@ class TelegramCommandsHandler(ChannelHandler):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to '{}' exchange".format(
-            HEALTH_CHECK_EXCHANGE))
+        self.logger.info("Sent heartbeat to %s exchange", HEALTH_CHECK_EXCHANGE)
 
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
@@ -118,7 +120,7 @@ class TelegramCommandsHandler(ChannelHandler):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         data = body
-        self.logger.info("Received {}".format(data))
+        self.logger.debug("Received %s", data)
 
         heartbeat = {}
         try:
@@ -132,7 +134,7 @@ class TelegramCommandsHandler(ChannelHandler):
         except Exception as e:
             # If we encounter an error during processing log the error and
             # return so that no heartbeat is sent
-            self.logger.error("Error when processing {}".format(data))
+            self.logger.error("Error when processing %s", data)
             self.logger.exception(e)
             return
 
@@ -169,7 +171,7 @@ class TelegramCommandsHandler(ChannelHandler):
         log_and_print("{} is terminating. Connections with RabbitMQ will be "
                       "closed, and afterwards the process will "
                       "exit.".format(self), self.logger)
-        self.rabbitmq.disconnect_till_successful()
+        self.disconnect_from_rabbit()
         self.cmd_handlers.rabbitmq.disconnect_till_successful()
         self._stop_handling()
         log_and_print("{} terminated.".format(self), self.logger)
