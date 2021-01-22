@@ -11,8 +11,8 @@ export default {
     + "to give your configuration a name that includes the system's "
     + 'IP address such as system_1_172.32.123.43 .',
   name: 'This will be used to identify the current System configuration.',
-  name_holder: 'system_1_172.32.123.43',
-  exporter_url_holder: 'http://176.67.65.56:9100',
+  name_holder: 'system_1_192.0.2.0',
+  exporter_url_holder: 'http://192.0.2.0:9100',
   exporter_url: 'This is the node exporter url of your system.',
   monitor_system: 'Set to True if you want your system monitored.',
 };
