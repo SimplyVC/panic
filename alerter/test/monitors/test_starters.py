@@ -7,11 +7,13 @@ from src.configs.repo import RepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
-from src.monitors.starters import _initialize_monitor_logger, \
-    _initialize_monitor, start_system_monitor, start_github_monitor
+from src.monitors.starters import (_initialize_monitor_logger,
+                                   _initialize_monitor, start_system_monitor,
+                                   start_github_monitor)
 from src.monitors.system import SystemMonitor
-from src.utils.constants import SYSTEM_MONITOR_NAME_TEMPLATE, \
-    GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils import env
+from src.utils.constants import (SYSTEM_MONITOR_NAME_TEMPLATE,
+                                 GITHUB_MONITOR_NAME_TEMPLATE)
 
 
 class TestMonitorStarters(unittest.TestCase):
@@ -20,14 +22,13 @@ class TestMonitorStarters(unittest.TestCase):
         self.monitor_display_name = 'Test Monitor'
         self.monitor_module_name = 'TestMonitor'
         self.connection_check_time_interval = timedelta(seconds=0)
-        self.rabbit_ip = 'localhost'
-        # self.rabbit_ip = env.RABBIT_IP
+        self.rabbit_ip = env.RABBIT_IP
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
         self.dummy_logger = logging.getLogger('Dummy')
         self.github_monitor_name = 'test_github_monitor'
-        self.github_monitoring_period = 10
+        self.github_monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
         self.github_repo_id = 'test_repo_id'
         self.github_parent_id = 'test_github_parent_id'
         self.github_repo_name = 'test_repo'
@@ -43,7 +44,7 @@ class TestMonitorStarters(unittest.TestCase):
                                                  self.github_monitoring_period,
                                                  self.rabbitmq)
         self.system_monitor_name = 'test_system_monitor'
-        self.system_monitoring_period = 10
+        self.system_monitoring_period = env.SYSTEM_MONITOR_PERIOD_SECONDS
         self.system_id = 'test_system_id'
         self.system_parent_id = 'test_system_parent_id'
         self.system_name = 'test_system'
@@ -75,10 +76,10 @@ class TestMonitorStarters(unittest.TestCase):
                                    self.monitor_module_name)
 
         args, _ = mock_create_logger.call_args
-        self.assertEqual('logs/monitors/{}.log'.format(
+        self.assertEqual(env.MONITORS_LOG_FILE_TEMPLATE.format(
             self.monitor_display_name), args[0])
         self.assertEqual(self.monitor_module_name, args[1])
-        self.assertEqual('INFO', args[2])
+        self.assertEqual(env.LOGGING_LEVEL, args[2])
         self.assertEqual(True, args[3])
 
     @mock.patch("src.monitors.starters.create_logger")
@@ -163,7 +164,7 @@ class TestMonitorStarters(unittest.TestCase):
         self.assertEqual(SystemMonitor, args[0])
         self.assertEqual(SYSTEM_MONITOR_NAME_TEMPLATE.format(
             self.system_config.system_name), args[1])
-        self.assertEqual(60, args[2])
+        self.assertEqual(env.SYSTEM_MONITOR_PERIOD_SECONDS, args[2])
         self.assertEqual(self.system_config, args[3])
 
     @mock.patch("src.monitors.starters._initialize_monitor")
@@ -182,14 +183,5 @@ class TestMonitorStarters(unittest.TestCase):
         self.assertEqual(GitHubMonitor, args[0])
         self.assertEqual(GITHUB_MONITOR_NAME_TEMPLATE.format(
             self.repo_config.repo_name.replace('/', ' ')[:-1]), args[1])
-        self.assertEqual(3600, args[2])
+        self.assertEqual(env.GITHUB_MONITOR_PERIOD_SECONDS, args[2])
         self.assertEqual(self.repo_config, args[3])
-
-# TODO: Remove tearDown() commented code
-# TODO: Remove SIGHUP comment
-# TODO: Fix rabbit host
-# TODO: Remove env commented code in system manager, github manager, monitor
-#     : starters, compare with develop to see what changed
-# TODO: Now since tests finished we need to run in docker environment.
-#     : Do not forget to do the three TODOs above before.
-# TODO: Use env in path format
