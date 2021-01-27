@@ -19,6 +19,7 @@ from src.utils.constants import (SYSTEM_MONITOR_NAME_TEMPLATE,
 class TestMonitorStarters(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
+        self.dummy_logger.disabled = True
         self.monitor_display_name = 'Test Monitor'
         self.monitor_module_name = 'TestMonitor'
         self.connection_check_time_interval = timedelta(seconds=0)
