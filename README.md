@@ -117,6 +117,15 @@ PANIC will automatically read these configuration files and begin monitoring the
 
 Congratulations you should have PANIC up and running!
 
+**Running the Tests**:
+If you want to run the tests for PANIC do the following:
+```bash
+docker-compose kill  # To stop any running containers (to avoid conflicts)
+docker-compose -p panic-tests -f docker-compose-tests.yml up --build -d  # To build the tests container
+docker-compose -p panic-tests -f docker-compose-tests.yml logs test-suite  # To see the result of the tests
+docker-compose -p panic-tests -f docker-compose-tests.yml kill  # To remove test environment
+```
+
 ### Optional Installations
 
 #### Node Exporter Setup
