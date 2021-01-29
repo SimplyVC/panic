@@ -105,8 +105,10 @@ Then to exit hit the following keys:
 Once you have everything setup, you can start PANIC by running the below command:
 
 ```bash
-docker-compose up -d --build
+docker-compose up -d --build installer health-checker alerter
 ```
+
+**IMP**: In the `docker-compose up` command you should always state the services from the docker-compose file you want to run as otherwise the unit tests container would run, which possibly may create undesired behaviour. If you want to run the tests container, run the following command `docker-compose up --build -d test-suite`, making sure that no other service (except Redis, Mongo and Rabbit) is running. To view the test results, type `docker-compose logs test-suite`.
 
 Now you will have to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. To do this you will have to navigate to the running web-installer. This can be found on 
 `https://{IP_ADDRESS}:8000`, and if you're running it locally then it can be found here `https://localhost:8000`. The installer will first ask you to enter the username and password. These are `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` which you have changed previously.
