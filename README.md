@@ -105,10 +105,8 @@ Then to exit hit the following keys:
 Once you have everything setup, you can start PANIC by running the below command:
 
 ```bash
-docker-compose up -d --build installer health-checker alerter
+docker-compose up -d --build
 ```
-
-**IMP**: In the `docker-compose up` command you should always state the services from the docker-compose file you want to run as otherwise the unit tests container would run, which possibly may create undesired behaviour. If you want to run the tests container, run the following command `docker-compose up --build -d test-suite`, making sure that no other service (except Redis, Mongo and Rabbit) is running. To view the test results, type `docker-compose logs test-suite`.
 
 Now you will have to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. To do this you will have to navigate to the running web-installer. This can be found on 
 `https://{IP_ADDRESS}:8000`, and if you're running it locally then it can be found here `https://localhost:8000`. The installer will first ask you to enter the username and password. These are `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` which you have changed previously.
@@ -118,6 +116,15 @@ After you set-up PANIC to your liking, the Web-Installer will save these details
 PANIC will automatically read these configuration files and begin monitoring the data sources. To check that this is the case we suggest running the command `docker-compose logs alerter` and `docker-compose logs health-checker`. By this you can see the different components starting up. If you have set-up telegram commands we suggest that you enter the command `/status` to check that all PANIC components are running. If you really want to check that PANIC is up and running, we suggest that you check that all the logs inside `panic/alerter/logs` have no errors.
 
 Congratulations you should have PANIC up and running!
+
+**Running the Tests**:
+If you want to run the tests for PANIC do the following:
+```bash
+docker-compose kill  # To stop any running containers (to avoid conflicts)
+docker-compose -p panic-tests -f docker-compose-tests.yml up --build -d  # To build the tests container
+docker-compose -p panic-tests -f docker-compose-tests.yml logs test-suite  # To see the result of the tests
+docker-compose -p panic-tests -f docker-compose-tests.yml kill  # To remove test environment
+```
 
 ### Optional Installations
 
