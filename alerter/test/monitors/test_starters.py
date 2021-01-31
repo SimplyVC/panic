@@ -77,11 +77,10 @@ class TestMonitorStarters(unittest.TestCase):
                                    self.monitor_module_name)
 
         args, _ = mock_create_logger.call_args
-        self.assertEqual(env.MONITORS_LOG_FILE_TEMPLATE.format(
-            self.monitor_display_name), args[0])
-        self.assertEqual(self.monitor_module_name, args[1])
-        self.assertEqual(env.LOGGING_LEVEL, args[2])
-        self.assertEqual(True, args[3])
+        mock_create_logger.called_once_with(
+            env.MONITORS_LOG_FILE_TEMPLATE.format(self.monitor_display_name),
+            self.monitor_module_name, env.LOGGING_LEVEL, True
+        )
 
     @mock.patch("src.monitors.starters.create_logger")
     def test_initialize_monitor_logger_returns_created_logger_if_init_correct(
@@ -101,9 +100,9 @@ class TestMonitorStarters(unittest.TestCase):
         _initialize_monitor(GitHubMonitor, self.github_monitor_name,
                             self.github_monitoring_period, self.repo_config)
 
-        args, _ = mock_init_logger.call_args
-        self.assertEqual(self.github_monitor_name, args[0])
-        self.assertEqual(GitHubMonitor.__name__, args[1])
+        mock_init_logger.called_once_with(
+            self.github_monitor_name, GitHubMonitor.__name__
+        )
 
     @mock.patch("src.monitors.starters._initialize_monitor_logger")
     def test_initialize_monitor_system_calls_initialize_logger_correctly(
@@ -113,9 +112,9 @@ class TestMonitorStarters(unittest.TestCase):
         _initialize_monitor(SystemMonitor, self.system_monitor_name,
                             self.system_monitoring_period, self.system_config)
 
-        args, _ = mock_init_logger.call_args
-        self.assertEqual(self.system_monitor_name, args[0])
-        self.assertEqual(SystemMonitor.__name__, args[1])
+        mock_init_logger.called_once_with(
+            self.system_monitor_name, SystemMonitor.__name__
+        )
 
     @mock.patch("src.monitors.starters._initialize_monitor_logger")
     @mock.patch('src.monitors.starters.RabbitMQApi')
@@ -158,15 +157,12 @@ class TestMonitorStarters(unittest.TestCase):
 
         start_system_monitor(self.system_config)
 
-        args, _ = mock_start_monitor.call_args
-        self.assertEqual(self.test_system_monitor, args[0])
-
-        args, _ = mock_initialize_monitor.call_args
-        self.assertEqual(SystemMonitor, args[0])
-        self.assertEqual(SYSTEM_MONITOR_NAME_TEMPLATE.format(
-            self.system_config.system_name), args[1])
-        self.assertEqual(env.SYSTEM_MONITOR_PERIOD_SECONDS, args[2])
-        self.assertEqual(self.system_config, args[3])
+        mock_start_monitor.called_once_with(self.test_system_monitor)
+        mock_initialize_monitor.called_once_with(
+            SystemMonitor,
+            SYSTEM_MONITOR_NAME_TEMPLATE.format(self.system_config.system_name),
+            env.SYSTEM_MONITOR_PERIOD_SECONDS, self.system_config
+        )
 
     @mock.patch("src.monitors.starters._initialize_monitor")
     @mock.patch('src.monitors.starters.start_monitor')
@@ -177,12 +173,10 @@ class TestMonitorStarters(unittest.TestCase):
 
         start_github_monitor(self.repo_config)
 
-        args, _ = mock_start_monitor.call_args
-        self.assertEqual(self.test_github_monitor, args[0])
-
-        args, _ = mock_initialize_monitor.call_args
-        self.assertEqual(GitHubMonitor, args[0])
-        self.assertEqual(GITHUB_MONITOR_NAME_TEMPLATE.format(
-            self.repo_config.repo_name.replace('/', ' ')[:-1]), args[1])
-        self.assertEqual(env.GITHUB_MONITOR_PERIOD_SECONDS, args[2])
-        self.assertEqual(self.repo_config, args[3])
+        mock_start_monitor.called_once_with(self.test_github_monitor)
+        mock_initialize_monitor.called_once_with(
+            GitHubMonitor,
+            GITHUB_MONITOR_NAME_TEMPLATE.format(
+                self.repo_config.repo_name.replace('/', ' ')[:-1]),
+            env.GITHUB_MONITOR_PERIOD_SECONDS, self.repo_config
+        )
