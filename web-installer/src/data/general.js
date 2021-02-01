@@ -1,23 +1,53 @@
 import {
-  CHANNELS_STEP, NODES_STEP, REPOSITORIES_STEP, ALERTS_STEP,
-} from '../constants/constants';
+  CHANNELS_STEP,
+  NODES_STEP,
+  REPOSITORIES_STEP,
+  ALERTS_STEP,
+} from 'constants/constants';
 
 export default {
   general: {
     title: 'General Settings',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis eget nisi sed dolor ornare fermentum. Fusce massa augue, pulvinar ut consectetur a, auctor non lacus. Donec dui libero, luctus ut libero a, sodales molestie sapien. Sed ac orci molestie, dignissim sem egestas, vehicula urna. Cras odio nunc, viverra et iaculis ut, cursus vitae arcu. Sed eros massa, pretium a diam at, semper placerat tellus. Donec vestibulum tortor non tellus placerat tincidunt. Nullam imperdiet augue nulla, non imperdiet eros sodales nec. In hac habitasse platea dictumst. Vivamus vel rhoncus turpis. Proin in velit magna. Nullam volutpat venenatis placerat. Etiam ex eros, rhoncus nec diam vel, sollicitudin commodo dui. Sed suscipit quis neque vel blandit. Vivamus dui nisl, pellentesque porttitor vehicula sed, tempus sit amet orci. Vestibulum congue laoreet dui sed viverra. ',
+  },
+  periodic: {
+    title: 'Periodic Alive Reminder',
+    description:
+      'The periodic alive reminder is used to notify you that PANIC '
+      + "and all of it's components are fully operational. If enabled"
+      + ' and configured you will receive INFO alerts every (n) '
+      + 'seconds notifying you that PANIC is operational. If the '
+      + 'interval is very small this will result in you getting '
+      + 'spammed with alerts, a suggestion is to keep it at a couple '
+      + 'of hours.',
   },
   repoForm: {
-    description: 'General repositories description goes here.',
-    nameHolder: 'SimplyVC/panic',
-    nameTip: 'This is the path of the repository that will be monitored. E.g: '
-      + 'If the full URL is https://github.com/simplyVC/panic then you '
-      + 'have to enter simplyVC/panic.',
+    title: 'Github Repositories Setup',
+    description:
+      'You will now add a github repository that you want monitored '
+      + 'and alerted on. You will receive informational alerts '
+      + 'whenever there is a new release for the monitored repo. '
+      + 'You must enter the path of the repository with a trailing '
+      + 'forward slash, so if you want to monitor '
+      + 'https://github.com/SimplyVC/panic/ you will need to '
+      + 'enter SimplyVC/panic/ into the Field below.',
+    nameHolder: 'SimplyVC/panic/',
+    nameTip:
+      'This is the path of the repository that will be monitored. E.g: '
+      + 'If the full URL is https://github.com/SimplyVC/panic/ then you '
+      + 'have to enter SimplyVC/panic/.',
     monitorTip: 'Set True if you want to monitor this repository.',
     backStep: NODES_STEP,
     nextStep: CHANNELS_STEP,
   },
   channelsTable: {
+    title: 'Choose Channels',
+    description:
+      'Choose the channels which should receive alerts related to general repositories '
+      + 'and systems, and the periodic alive reminder You can select as many configurations '
+      + 'as you want from as many channels as you want.',
+    empty:
+      "You haven't setup any channels! You will not be alerted on this "
+      + 'chain!',
     backStep: REPOSITORIES_STEP,
     nextStep: ALERTS_STEP,
   },
