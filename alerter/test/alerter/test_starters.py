@@ -12,6 +12,7 @@ from src.alerter.alerter_starters import (
     _initialise_alerter_logger, _initialise_system_alerter,
     _initialise_github_alerter, start_github_alerter,
     start_system_alerter)
+from src.utils.constants import SYSTEM_ALERTER_NAME_TEMPLATE
 from src.utils import env
 
 
@@ -91,6 +92,7 @@ class TestAlertersStarters(unittest.TestCase):
         self.system_id = 'test_system_id'
         self.system_parent_id = 'test_system_parent_id'
         self.system_name = 'test_system'
+        self.chain_name = 'chain'
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -104,7 +106,9 @@ class TestAlertersStarters(unittest.TestCase):
             self, mock_create_logger) -> None:
         mock_create_logger.return_value = None
 
-        _initialise_alerter_logger(self.alerter_name)
+        _initialise_alerter_logger(
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name),
+            self.alerter_name)
 
         mock_create_logger.called_once_with(
             env.ALERTERS_LOG_FILE_TEMPLATE.format(self.alerter_name),
@@ -116,7 +120,9 @@ class TestAlertersStarters(unittest.TestCase):
             self, mock_create_logger) -> None:
         mock_create_logger.return_value = self.dummy_logger
 
-        actual_output = _initialise_alerter_logger(self.alerter_name)
+        actual_output = _initialise_alerter_logger(
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name),
+            self.alerter_name)
 
         self.assertEqual(self.dummy_logger, actual_output)
 
@@ -148,6 +154,7 @@ class TestAlertersStarters(unittest.TestCase):
     def test_initialise_alerter_creates_github_alerter_correctly(
             self, mock_github_alerter, mock_init_logger) -> None:
         mock_init_logger.return_value = self.dummy_logger
+        mock_github_alerter.__name__ = 'github_alerter_name'
 
         _initialise_github_alerter()
         mock_github_alerter.called_once_with(
@@ -159,6 +166,7 @@ class TestAlertersStarters(unittest.TestCase):
     def test_initialise_alerter_creates_system_alerter_correctly(
             self, mock_system_alerter, mock_init_logger) -> None:
         mock_init_logger.return_value = self.dummy_logger
+        mock_system_alerter.__name__ = "system_alerter_name"
 
         _initialise_system_alerter(self.system_alerts_config,
                                    self.parent_id)
