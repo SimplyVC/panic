@@ -58,7 +58,7 @@ export default {
     prometheusTip:
       'This IP address will be used to monitor prometheus based '
       + 'statistics, if omitted they will not be monitored and alerted on.',
-    exporterUrlHolder: 'http://192.0.2.0:9100',
+    exporterUrlHolder: 'http://192.0.2.0:9100/metrics',
     exporterUrlTip:
       'This IP address will be used to monitor node exporter '
       + 'statistics, if omitted they will not be monitored and alerted on.',

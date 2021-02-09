@@ -9,10 +9,10 @@ export default {
     what_1: "Channels are used by PANIC to communicate with it's users.",
     what_2:
       'Channels allow for different modes of communication such as '
-      + 'directly calling your phone or sending messages on Telegram.',
+      + 'directly calling your phone, or sending messages on Telegram.',
     what_3:
-      'Channels such as Telegram allow for commands to interact with'
-      + 'PANIC such as checking the state of PANIC.',
+      'Channels such as Telegram allow for commands to be inputted. This '
+      + 'enables user interaction with the alerter.',
     channel_1:
       'Telegram: a cross-platform cloud-based instant messaging, video'
       + ' calling, and VoIP service.',
@@ -44,7 +44,7 @@ export default {
   alerts: {
     title: 'Types of Alerts',
     info:
-      "INFO: Alerts of this type have little to zero severity but consists of information '"
+      "INFO: Alerts of this type have little to zero severity but consists of information "
       + 'which is still important to acknowledge. Info alerts also include positive events. '
       + "Example: System's storage usage is no longer at a critical level.",
     warning:
@@ -65,8 +65,8 @@ export default {
       + 'that we highly recommend setting up. This requires you to have a '
       + 'Telegram bot set up, which is a free and quick procedure. Telegram is '
       + 'also used as a two-way interface with the alerter and '
-      + 'as an assistant, allowing you to do things such as snooze phone '
-      + "call alerts and to get the alerter's current status from Telegram. ",
+      + 'as an assistant, allowing you to do things such as mute phone '
+      + "call alerts and to get the alerter's current status. ",
     name: 'This will be used to identify the saved telegram configuration.',
     token: 'This is the API token of your created bot.',
     chat_id: 'This is the chat identifier of your newly created bot.',
@@ -81,8 +81,8 @@ export default {
     description:
       'Twilio phone-call alerts are the most important alerts since they '
       + "are the best at grabbing your attention, especially when you're "
-      + 'asleep! To set these up, you have to have a Twilio account set up, '
-      + 'with a registered Twilio phone number and a verified phone number.'
+      + 'asleep! To set these up you have to have a Twilio account set up '
+      + 'with a registered Twilio phone number and a verified phone number. '
       + 'The timed trial version of Twilio is free.',
     name: 'This will be used to identify the saved Twilio configuration.',
     account:
@@ -98,7 +98,9 @@ export default {
       'Email alerts are more useful as a backup alerting channel rather '
       + 'than the main one, given that one is much more likely to notice a '
       + 'a message on Telegram or a phone call. Email alerts also require '
-      + 'an SMTP server to be set up for the alerter to be able to send.',
+      + 'an SMTP server to be set up for the alerter to be able to send alerts.',
+    port: 'This is the port number at which the SMTP server can be accessed '
+      + 'through',
     smtp:
       "This is the SMTP server's address, which is used to send the emails.",
     name: 'This will be used to identify the saved email configuration.',
