@@ -27,7 +27,6 @@ class TestMonitorStarters(unittest.TestCase):
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
-        self.dummy_logger = logging.getLogger('Dummy')
         self.github_monitor_name = 'test_github_monitor'
         self.github_monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
         self.github_repo_id = 'test_repo_id'
@@ -76,7 +75,6 @@ class TestMonitorStarters(unittest.TestCase):
         _initialise_monitor_logger(self.monitor_display_name,
                                    self.monitor_module_name)
 
-        args, _ = mock_create_logger.call_args
         mock_create_logger.assert_called_once_with(
             env.MONITORS_LOG_FILE_TEMPLATE.format(self.monitor_display_name),
             self.monitor_module_name, env.LOGGING_LEVEL, True
