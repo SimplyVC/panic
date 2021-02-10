@@ -1,16 +1,21 @@
 import logging
 import unittest
 from datetime import timedelta
+from queue import Queue
 from unittest import mock
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.starters import (_initialise_transformer_logger,
                                             _initialise_transformer_redis,
-                                            _initialise_data_transformer)
+                                            _initialise_data_transformer,
+                                            start_system_data_transformer,
+                                            start_github_data_transformer)
 from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants import SYSTEM_DATA_TRANSFORMER_NAME, \
+    GITHUB_DATA_TRANSFORMER_NAME
 
 
 class TestDataTransformersStarters(unittest.TestCase):
@@ -21,7 +26,6 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.transformer_module_name = 'TestDataTransformer'
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = env.RABBIT_IP
-        self.rabbit_ip = 'localhost'
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
@@ -35,22 +39,28 @@ class TestDataTransformersStarters(unittest.TestCase):
                               self.connection_check_time_interval)
         self.github_dt_name = 'test_github_data_transformer'
         self.github_dt_publishing_queue_size = 1000
+        self.publishing_queue_github_dt = Queue(
+            self.github_dt_publishing_queue_size)
         self.test_github_dt = GitHubDataTransformer(
             self.github_dt_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.github_dt_publishing_queue_size)
+        self.test_github_dt._publishing_queue = self.publishing_queue_github_dt
         self.system_dt_name = 'test_system_data_transformer'
         self.system_dt_publishing_queue_size = 1001
-        self.test_system_data_transformer = SystemDataTransformer(
+        self.publishing_queue_system_dt = Queue(
+            self.system_dt_publishing_queue_size)
+        self.test_system_dt = SystemDataTransformer(
             self.system_dt_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.system_dt_publishing_queue_size
         )
+        self.test_system_dt._publishing_queue = self.publishing_queue_system_dt
 
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.rabbitmq = None
         self.redis = None
         self.test_github_dt = None
-        self.test_system_data_transformer = None
+        self.test_system_dt = None
 
     @mock.patch("src.data_transformers.starters.create_logger")
     def test_initialise_transformer_logger_calls_create_logger_correctly(
@@ -123,9 +133,23 @@ class TestDataTransformersStarters(unittest.TestCase):
         mock_init_redis.assert_called_once_with(self.github_dt_name,
                                                 self.dummy_logger)
 
+    @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
+    @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
+    @mock.patch('src.data_transformers.starters.RabbitMQApi')
+    @mock.patch('src.abstract.publisher_subscriber.Queue')
     def test_initialise_data_transformer_creates_github_data_trans_correctly(
-            self) -> None:
-        pass
+            self, mock_queue, mock_rabbit, mock_init_redis,
+            mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_init_redis.return_value = self.redis
+        mock_rabbit.return_value = self.rabbitmq
+        mock_rabbit.__name__ = RabbitMQApi.__name__
+        mock_queue.return_value = self.publishing_queue_github_dt
+
+        actual_output = _initialise_data_transformer(GitHubDataTransformer,
+                                                     self.github_dt_name)
+
+        self.assertEqual(self.test_github_dt.__dict__, actual_output.__dict__)
 
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
     def test_initialise_data_transformer_system_calls_initialise_logger_correct(
@@ -149,71 +173,46 @@ class TestDataTransformersStarters(unittest.TestCase):
         mock_init_redis.assert_called_once_with(self.system_dt_name,
                                                 self.dummy_logger)
 
+    @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
+    @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
+    @mock.patch('src.data_transformers.starters.RabbitMQApi')
+    @mock.patch('src.abstract.publisher_subscriber.Queue')
     def test_initialise_data_transformer_creates_system_data_trans_correctly(
-            self) -> None:
-        pass
-    #
-    # @mock.patch("src.monitors.starters._initialise_monitor_logger")
-    # @mock.patch('src.monitors.starters.RabbitMQApi')
-    # def test_initialise_monitor_creates_github_monitor_correctly(
-    #         self, mock_rabbit, mock_init_logger) -> None:
-    #     mock_init_logger.return_value = self.dummy_logger
-    #     mock_rabbit.return_value = self.rabbitmq
-    #     mock_rabbit.__name__ = RabbitMQApi.__name__
-    #
-    #     actual_output = _initialise_monitor(GitHubMonitor,
-    #                                         self.github_monitor_name,
-    #                                         self.github_monitoring_period,
-    #                                         self.repo_config)
-    #
-    #     self.assertEqual(self.test_github_monitor.__dict__,
-    #                      actual_output.__dict__)
-    #
-    # @mock.patch("src.monitors.starters._initialise_monitor_logger")
-    # @mock.patch('src.monitors.starters.RabbitMQApi')
-    # def test_initialise_monitor_creates_system_monitor_correctly(
-    #         self, mock_rabbit, mock_init_logger) -> None:
-    #     mock_init_logger.return_value = self.dummy_logger
-    #     mock_rabbit.return_value = self.rabbitmq
-    #     mock_rabbit.__name__ = RabbitMQApi.__name__
-    #
-    #     actual_output = _initialise_monitor(SystemMonitor,
-    #                                         self.system_monitor_name,
-    #                                         self.system_monitoring_period,
-    #                                         self.system_config)
-    #
-    #     self.assertEqual(self.test_system_monitor.__dict__,
-    #                      actual_output.__dict__)
-    #
-    # @mock.patch("src.monitors.starters._initialise_monitor")
-    # @mock.patch('src.monitors.starters.start_monitor')
-    # def test_start_system_monitor_calls_sub_functions_correctly(
-    #         self, mock_start_monitor, mock_initialise_monitor) -> None:
-    #     mock_start_monitor.return_value = None
-    #     mock_initialise_monitor.return_value = self.test_system_monitor
-    #
-    #     start_system_monitor(self.system_config)
-    #
-    #     mock_start_monitor.assert_called_once_with(self.test_system_monitor)
-    #     mock_initialise_monitor.assert_called_once_with(
-    #         SystemMonitor,
-    #         SYSTEM_MONITOR_NAME_TEMPLATE.format(self.system_config.system_name),
-    #         env.SYSTEM_MONITOR_PERIOD_SECONDS, self.system_config
-    #     )
-    #
-    # @mock.patch("src.monitors.starters._initialise_monitor")
-    # @mock.patch('src.monitors.starters.start_monitor')
-    # def test_start_github_monitor_calls_sub_functions_correctly(
-    #         self, mock_start_monitor, mock_initialise_monitor) -> None:
-    #     mock_start_monitor.return_value = None
-    #     mock_initialise_monitor.return_value = self.test_github_monitor
-    #
-    #     start_github_monitor(self.repo_config)
-    #
-    #     mock_start_monitor.assert_called_once_with(self.test_github_monitor)
-    #     mock_initialise_monitor.assert_called_once_with(
-    #         GitHubMonitor,
-    #         GITHUB_MONITOR_NAME_TEMPLATE.format(
-    #             self.repo_config.repo_name.replace('/', ' ')[:-1]),
-    #         env.GITHUB_MONITOR_PERIOD_SECONDS, self.repo_config
-    #     )
+            self, mock_queue, mock_rabbit, mock_init_redis,
+            mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_init_redis.return_value = self.redis
+        mock_rabbit.return_value = self.rabbitmq
+        mock_rabbit.__name__ = RabbitMQApi.__name__
+        mock_queue.return_value = self.publishing_queue_system_dt
+
+        actual_output = _initialise_data_transformer(SystemDataTransformer,
+                                                     self.system_dt_name)
+
+        self.assertEqual(self.test_system_dt.__dict__, actual_output.__dict__)
+
+    @mock.patch("src.data_transformers.starters._initialise_data_transformer")
+    @mock.patch('src.data_transformers.starters.start_transformer')
+    def test_start_system_data_transformer_calls_sub_functions_correctly(
+            self, mock_start_transformer, mock_initialise_dt) -> None:
+        mock_start_transformer.return_value = None
+        mock_initialise_dt.return_value = self.test_system_dt
+
+        start_system_data_transformer()
+
+        mock_start_transformer.assert_called_once_with(self.test_system_dt)
+        mock_initialise_dt.assert_called_once_with(SystemDataTransformer,
+                                                   SYSTEM_DATA_TRANSFORMER_NAME)
+
+    @mock.patch("src.data_transformers.starters._initialise_data_transformer")
+    @mock.patch('src.data_transformers.starters.start_transformer')
+    def test_start_github_data_transformer_calls_sub_functions_correctly(
+            self, mock_start_transformer, mock_initialise_dt) -> None:
+        mock_start_transformer.return_value = None
+        mock_initialise_dt.return_value = self.test_github_dt
+
+        start_github_data_transformer()
+
+        mock_start_transformer.assert_called_once_with(self.test_github_dt)
+        mock_initialise_dt.assert_called_once_with(GitHubDataTransformer,
+                                                   GITHUB_DATA_TRANSFORMER_NAME)
