@@ -22,21 +22,15 @@ _TCH_INPUT_ROUTING_KEY = 'ping'
 
 class TelegramCommandsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, redis_ip: str, redis_db: int, redis_port: int,
-                 unique_alerter_identifier: str, mongo_ip: str, mongo_db: str,
-                 mongo_port: int, associated_chains: Dict,
-                 telegram_channel: TelegramChannel) -> None:
+                 rabbit_ip: str, telegram_channel: TelegramChannel,
+                 cmd_handlers: TelegramCommandHandlers) -> None:
         super().__init__(handler_name, logger, rabbit_ip)
 
         self._telegram_channel = telegram_channel
         self._telegram_commands_handler_queue = \
             'telegram_{}_commands_handler_queue'.format(
                 self.telegram_channel.channel_id)
-        self._cmd_handlers = TelegramCommandHandlers(
-            'Telegram Command Handlers', logger.getChild(
-                TelegramCommandHandlers.__name__), rabbit_ip, redis_ip,
-            redis_db, redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
-            mongo_port, associated_chains, telegram_channel)
+        self._cmd_handlers = cmd_handlers
 
         command_specific_handlers = [
             CommandHandler('start', self.cmd_handlers.start_callback),
