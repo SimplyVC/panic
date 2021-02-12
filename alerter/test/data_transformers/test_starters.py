@@ -97,7 +97,7 @@ class TestDataTransformersStarters(unittest.TestCase):
 
         mock_init_redis.assert_called_once_with(
             logger=self.dummy_logger.getChild(RedisApi.__name__),
-            db=int(env.REDIS_DB), host=env.REDIS_IP, port=int(env.REDIS_PORT),
+            db=env.REDIS_DB, host=env.REDIS_IP, port=env.REDIS_PORT,
             namespace=env.UNIQUE_ALERTER_IDENTIFIER
         )
 
