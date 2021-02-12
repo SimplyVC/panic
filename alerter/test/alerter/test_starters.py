@@ -82,11 +82,16 @@ class TestAlertersStarters(unittest.TestCase):
         self.test_system_alerter = SystemAlerter(
             self.alerter_name,
             self.system_alerts_config,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq,
+            env.ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
         self.test_github_alerter = GithubAlerter(
-            self.github_alerter_name, self.dummy_logger
+            self.github_alerter_name,
+            self.dummy_logger,
+            self.rabbitmq,
+            env.ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
         self.system_id = 'test_system_id'
