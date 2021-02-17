@@ -32,7 +32,6 @@ class TestDataTransformersStarters(unittest.TestCase):
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_DB
         self.redis_host = env.REDIS_IP
-        self.redis_host = 'localhost'
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db, self.redis_host,
@@ -121,10 +120,8 @@ class TestDataTransformersStarters(unittest.TestCase):
                                                  transformer_module_name)
 
     @parameterized.expand([
-        (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,
-         GitHubDataTransformer.__name__),
-        (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,
-         SystemDataTransformer.__name__),
+        (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,),
+        (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
@@ -141,9 +138,9 @@ class TestDataTransformersStarters(unittest.TestCase):
                                                 self.dummy_logger)
 
     @parameterized.expand([
-        (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,
+        (GitHubDataTransformer, 'self.github_dt_name',
          'self.publishing_queue_github_dt', 'self.test_github_dt'),
-        (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,
+        (SystemDataTransformer, 'self.system_dt_name',
          'self.publishing_queue_system_dt', 'self.test_system_dt'),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
@@ -160,8 +157,8 @@ class TestDataTransformersStarters(unittest.TestCase):
         mock_rabbit.__name__ = RabbitMQApi.__name__
         mock_queue.return_value = eval(publishing_queue)
 
-        actual_output = _initialise_data_transformer(transformer_class,
-                                                     transformer_display_name)
+        actual_output = _initialise_data_transformer(
+            transformer_class, eval(transformer_display_name))
 
         self.assertEqual(eval(expected_data_transformer).__dict__,
                          actual_output.__dict__)
