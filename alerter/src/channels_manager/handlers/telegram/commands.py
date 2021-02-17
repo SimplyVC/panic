@@ -65,7 +65,7 @@ class TelegramCommandsHandler(ChannelHandler):
     def telegram_channel(self) -> TelegramChannel:
         return self._telegram_channel
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
@@ -95,15 +95,17 @@ class TelegramCommandsHandler(ChannelHandler):
             exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.worker',
             body=data_to_send, is_body_dict=True,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
-        self.logger.info("Sent heartbeat to %s exchange", HEALTH_CHECK_EXCHANGE)
+        self.logger.debug("Sent heartbeat to %s exchange",
+                          HEALTH_CHECK_EXCHANGE)
 
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
 
     def _start_handling(self, run_in_background: bool = False) -> None:
         # Start polling
-        self.logger.info("Started handling commands.")
-        self._updater.start_polling(clean=True)
+        if not self._updater.running:
+            self.logger.info("Started handling commands.")
+            self._updater.start_polling(clean=True)
 
         # Run the bot until you press Ctrl-C or the process receives SIGINT,
         # SIGTERM or SIGABRT. This should be used most of the time, since
@@ -150,7 +152,7 @@ class TelegramCommandsHandler(ChannelHandler):
             raise e
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._start_handling(run_in_background=True)
@@ -158,9 +160,8 @@ class TelegramCommandsHandler(ChannelHandler):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
-                # connection or channel settings. Also, stop the updater thread.
-                self._stop_handling()
+                # channel is reset, therefore we need to re-initialise the
+                # connection or channel settings.
                 raise e
             except Exception as e:
                 self.logger.exception(e)
