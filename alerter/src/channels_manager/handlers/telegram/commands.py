@@ -9,10 +9,12 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
+from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
     TelegramCommandHandlers
 from src.channels_manager.handlers.handler import ChannelHandler
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
@@ -22,9 +24,9 @@ _TCH_INPUT_ROUTING_KEY = 'ping'
 
 class TelegramCommandsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, telegram_channel: TelegramChannel,
+                 rabbitmq: RabbitMQApi, telegram_channel: TelegramChannel,
                  cmd_handlers: TelegramCommandHandlers) -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._telegram_channel = telegram_channel
         self._telegram_commands_handler_queue = \
@@ -59,7 +61,7 @@ class TelegramCommandsHandler(ChannelHandler):
     def telegram_channel(self) -> TelegramChannel:
         return self._telegram_channel
 
-    def _initialize_rabbitmq(self) -> None:
+    def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
 
         # Declare consuming intentions
@@ -91,9 +93,6 @@ class TelegramCommandsHandler(ChannelHandler):
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.debug("Sent heartbeat to %s exchange",
                           HEALTH_CHECK_EXCHANGE)
-
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
 
     def _start_handling(self, run_in_background: bool = False) -> None:
         # Start polling
@@ -145,7 +144,7 @@ class TelegramCommandsHandler(ChannelHandler):
             raise e
 
     def start(self) -> None:
-        self._initialize_rabbitmq()
+        self._initialise_rabbitmq()
         while True:
             try:
                 self._start_handling(run_in_background=True)
@@ -172,8 +171,9 @@ class TelegramCommandsHandler(ChannelHandler):
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
-    def _process_alert(self, ch: BlockingChannel,
-                       method: pika.spec.Basic.Deliver,
-                       properties: pika.spec.BasicProperties,
-                       body: bytes) -> None:
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because wrt to rabbit,
+        the telegram commands handler only sends heartbeats.
+        """
         pass
