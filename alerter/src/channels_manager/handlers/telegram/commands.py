@@ -96,8 +96,9 @@ class TelegramCommandsHandler(ChannelHandler):
 
     def _start_handling(self, run_in_background: bool = False) -> None:
         # Start polling
-        self.logger.info("Started handling commands.")
-        self._updater.start_polling(clean=True)
+        if not self._updater.running:
+            self.logger.info("Started handling commands.")
+            self._updater.start_polling(clean=True)
 
         # Run the bot until you press Ctrl-C or the process receives SIGINT,
         # SIGTERM or SIGABRT. This should be used most of the time, since
@@ -152,9 +153,8 @@ class TelegramCommandsHandler(ChannelHandler):
             except (pika.exceptions.AMQPConnectionError,
                     pika.exceptions.AMQPChannelError) as e:
                 # If we have either a channel error or connection error, the
-                # channel is reset, therefore we need to re-initialize the
-                # connection or channel settings. Also, stop the updater thread.
-                self._stop_handling()
+                # channel is reset, therefore we need to re-initialise the
+                # connection or channel settings.
                 raise e
             except Exception as e:
                 self.logger.exception(e)

@@ -3,6 +3,7 @@ import unittest
 from datetime import timedelta
 from queue import Queue
 from unittest import mock
+from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.github import GitHubDataTransformer
@@ -31,7 +32,6 @@ class TestDataTransformersStarters(unittest.TestCase):
             connection_check_time_interval=self.connection_check_time_interval)
         self.redis_db = env.REDIS_DB
         self.redis_host = env.REDIS_IP
-        self.redis_host = 'localhost'
         self.redis_port = env.REDIS_PORT
         self.redis_namespace = env.UNIQUE_ALERTER_IDENTIFIER
         self.redis = RedisApi(self.dummy_logger, self.redis_db, self.redis_host,
@@ -63,12 +63,15 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.test_system_dt = None
 
     @mock.patch("src.data_transformers.starters.create_logger")
-    def test_initialise_transformer_logger_calls_create_logger_correctly(
+    def test_initialise_transformer_logger_creates_and_returns_logger_correctly(
             self, mock_create_logger) -> None:
-        mock_create_logger.return_value = None
+        # In this test we will check that _create_logger was called correctly,
+        # and that the created logger is returned. The actual logic of logger
+        # creation should be tested when testing _create_logger
+        mock_create_logger.return_value = self.dummy_logger
 
-        _initialise_transformer_logger(self.transformer_display_name,
-                                       self.transformer_module_name)
+        returned_logger = _initialise_transformer_logger(
+            self.transformer_display_name, self.transformer_module_name)
 
         mock_create_logger.assert_called_once_with(
             env.TRANSFORMERS_LOG_FILE_TEMPLATE.format(
@@ -76,24 +79,19 @@ class TestDataTransformersStarters(unittest.TestCase):
             env.LOGGING_LEVEL, True
         )
 
-    @mock.patch("src.data_transformers.starters.create_logger")
-    def test_initialise_trans_logger_returns_created_logger_if_init_correct(
-            self, mock_create_logger) -> None:
-        mock_create_logger.return_value = self.dummy_logger
-
-        actual_output = _initialise_transformer_logger(
-            self.transformer_display_name, self.transformer_module_name)
-
-        self.assertEqual(self.dummy_logger, actual_output)
+        self.assertEqual(self.dummy_logger, returned_logger)
 
     @mock.patch("src.data_transformers.starters.RedisApi")
-    def test_initialise_transformer_redis_initialises_redis_correctly(
+    def test_initialise_transformer_redis_creates_and_returns_redis_correctly(
             self, mock_init_redis) -> None:
-        mock_init_redis.return_value = None
+        # In this test we will check that redis initialisation was done
+        # correctly, and that the created redis instance is returned. The actual
+        # logic of redis creation should be tested when testing the redis API
+        mock_init_redis.return_value = self.redis
         mock_init_redis.__name__ = RedisApi.__name__
 
-        _initialise_transformer_redis(self.transformer_display_name,
-                                      self.dummy_logger)
+        returned_redis = _initialise_transformer_redis(
+            self.transformer_display_name, self.dummy_logger)
 
         mock_init_redis.assert_called_once_with(
             logger=self.dummy_logger.getChild(RedisApi.__name__),
@@ -101,95 +99,69 @@ class TestDataTransformersStarters(unittest.TestCase):
             namespace=env.UNIQUE_ALERTER_IDENTIFIER
         )
 
-    @mock.patch("src.data_transformers.starters.create_logger")
-    def test_initialise_transformer_redis_returns_created_redis_if_init_correct(
-            self, mock_create_logger) -> None:
-        mock_create_logger.return_value = self.dummy_logger
+        self.assertEqual(self.redis, returned_redis)
 
-        actual_output = _initialise_transformer_logger(
-            self.transformer_display_name, self.transformer_module_name)
-
-        self.assertEqual(self.dummy_logger, actual_output)
-
+    @parameterized.expand([
+        (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,
+         GitHubDataTransformer.__name__),
+        (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,
+         SystemDataTransformer.__name__),
+    ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
-    def test_initialise_data_transformer_github_calls_initialise_logger_correct(
-            self, mock_init_logger) -> None:
+    def test_initialise_data_transformer_calls_initialise_logger_correct(
+            self, transformer_class, transformer_display_name,
+            transformer_module_name, mock_init_logger) -> None:
         mock_init_logger.return_value = self.dummy_logger
 
-        _initialise_data_transformer(GitHubDataTransformer, self.github_dt_name)
+        _initialise_data_transformer(transformer_class,
+                                     transformer_display_name)
 
-        mock_init_logger.assert_called_once_with(self.github_dt_name,
-                                                 GitHubDataTransformer.__name__)
+        mock_init_logger.assert_called_once_with(transformer_display_name,
+                                                 transformer_module_name)
 
+    @parameterized.expand([
+        (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,),
+        (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,),
+    ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
-    def test_initialise_data_transformer_github_calls_initialise_redis_correct(
-            self, mock_init_logger, mock_init_redis) -> None:
+    def test_initialise_data_transformer_calls_initialise_redis_correct(
+            self, transformer_class, transformer_display_name, mock_init_logger,
+            mock_init_redis) -> None:
         mock_init_logger.return_value = self.dummy_logger
         mock_init_redis.return_value = self.redis
 
-        _initialise_data_transformer(GitHubDataTransformer, self.github_dt_name)
+        _initialise_data_transformer(transformer_class,
+                                     transformer_display_name)
 
-        mock_init_redis.assert_called_once_with(self.github_dt_name,
+        mock_init_redis.assert_called_once_with(transformer_display_name,
                                                 self.dummy_logger)
 
+    @parameterized.expand([
+        (GitHubDataTransformer, 'self.github_dt_name',
+         'self.publishing_queue_github_dt', 'self.test_github_dt'),
+        (SystemDataTransformer, 'self.system_dt_name',
+         'self.publishing_queue_system_dt', 'self.test_system_dt'),
+    ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
     @mock.patch('src.data_transformers.starters.RabbitMQApi')
     @mock.patch('src.abstract.publisher_subscriber.Queue')
-    def test_initialise_data_transformer_creates_github_data_trans_correctly(
-            self, mock_queue, mock_rabbit, mock_init_redis,
+    def test_initialise_data_transformer_creates_data_transformer_correctly(
+            self, transformer_class, transformer_display_name, publishing_queue,
+            expected_data_transformer, mock_queue, mock_rabbit, mock_init_redis,
             mock_init_logger) -> None:
         mock_init_logger.return_value = self.dummy_logger
         mock_init_redis.return_value = self.redis
         mock_rabbit.return_value = self.rabbitmq
         mock_rabbit.__name__ = RabbitMQApi.__name__
-        mock_queue.return_value = self.publishing_queue_github_dt
+        mock_queue.return_value = eval(publishing_queue)
 
-        actual_output = _initialise_data_transformer(GitHubDataTransformer,
-                                                     self.github_dt_name)
+        actual_output = _initialise_data_transformer(
+            transformer_class, eval(transformer_display_name))
 
-        self.assertEqual(self.test_github_dt.__dict__, actual_output.__dict__)
-
-    @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
-    def test_initialise_data_transformer_system_calls_initialise_logger_correct(
-            self, mock_init_logger) -> None:
-        mock_init_logger.return_value = self.dummy_logger
-
-        _initialise_data_transformer(SystemDataTransformer, self.system_dt_name)
-
-        mock_init_logger.assert_called_once_with(self.system_dt_name,
-                                                 SystemDataTransformer.__name__)
-
-    @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
-    @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
-    def test_initialise_data_transformer_system_calls_initialise_redis_correct(
-            self, mock_init_logger, mock_init_redis) -> None:
-        mock_init_logger.return_value = self.dummy_logger
-        mock_init_redis.return_value = self.redis
-
-        _initialise_data_transformer(SystemDataTransformer, self.system_dt_name)
-
-        mock_init_redis.assert_called_once_with(self.system_dt_name,
-                                                self.dummy_logger)
-
-    @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
-    @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
-    @mock.patch('src.data_transformers.starters.RabbitMQApi')
-    @mock.patch('src.abstract.publisher_subscriber.Queue')
-    def test_initialise_data_transformer_creates_system_data_trans_correctly(
-            self, mock_queue, mock_rabbit, mock_init_redis,
-            mock_init_logger) -> None:
-        mock_init_logger.return_value = self.dummy_logger
-        mock_init_redis.return_value = self.redis
-        mock_rabbit.return_value = self.rabbitmq
-        mock_rabbit.__name__ = RabbitMQApi.__name__
-        mock_queue.return_value = self.publishing_queue_system_dt
-
-        actual_output = _initialise_data_transformer(SystemDataTransformer,
-                                                     self.system_dt_name)
-
-        self.assertEqual(self.test_system_dt.__dict__, actual_output.__dict__)
+        self.assertEqual(eval(expected_data_transformer).__dict__,
+                         actual_output.__dict__)
 
     @mock.patch("src.data_transformers.starters._initialise_data_transformer")
     @mock.patch('src.data_transformers.starters.start_transformer')
