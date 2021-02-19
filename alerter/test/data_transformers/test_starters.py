@@ -3,6 +3,7 @@ import unittest
 from datetime import timedelta
 from queue import Queue
 from unittest import mock
+
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
