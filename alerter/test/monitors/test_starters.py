@@ -27,7 +27,6 @@ class TestMonitorStarters(unittest.TestCase):
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
-        self.dummy_logger = logging.getLogger('Dummy')
         self.github_monitor_name = 'test_github_monitor'
         self.github_monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
         self.github_repo_id = 'test_repo_id'
@@ -76,8 +75,7 @@ class TestMonitorStarters(unittest.TestCase):
         _initialise_monitor_logger(self.monitor_display_name,
                                    self.monitor_module_name)
 
-        args, _ = mock_create_logger.call_args
-        mock_create_logger.called_once_with(
+        mock_create_logger.assert_called_once_with(
             env.MONITORS_LOG_FILE_TEMPLATE.format(self.monitor_display_name),
             self.monitor_module_name, env.LOGGING_LEVEL, True
         )
@@ -100,7 +98,7 @@ class TestMonitorStarters(unittest.TestCase):
         _initialise_monitor(GitHubMonitor, self.github_monitor_name,
                             self.github_monitoring_period, self.repo_config)
 
-        mock_init_logger.called_once_with(
+        mock_init_logger.assert_called_once_with(
             self.github_monitor_name, GitHubMonitor.__name__
         )
 
@@ -112,7 +110,7 @@ class TestMonitorStarters(unittest.TestCase):
         _initialise_monitor(SystemMonitor, self.system_monitor_name,
                             self.system_monitoring_period, self.system_config)
 
-        mock_init_logger.called_once_with(
+        mock_init_logger.assert_called_once_with(
             self.system_monitor_name, SystemMonitor.__name__
         )
 
@@ -157,8 +155,8 @@ class TestMonitorStarters(unittest.TestCase):
 
         start_system_monitor(self.system_config)
 
-        mock_start_monitor.called_once_with(self.test_system_monitor)
-        mock_initialise_monitor.called_once_with(
+        mock_start_monitor.assert_called_once_with(self.test_system_monitor)
+        mock_initialise_monitor.assert_called_once_with(
             SystemMonitor,
             SYSTEM_MONITOR_NAME_TEMPLATE.format(self.system_config.system_name),
             env.SYSTEM_MONITOR_PERIOD_SECONDS, self.system_config
@@ -173,8 +171,8 @@ class TestMonitorStarters(unittest.TestCase):
 
         start_github_monitor(self.repo_config)
 
-        mock_start_monitor.called_once_with(self.test_github_monitor)
-        mock_initialise_monitor.called_once_with(
+        mock_start_monitor.assert_called_once_with(self.test_github_monitor)
+        mock_initialise_monitor.assert_called_once_with(
             GitHubMonitor,
             GITHUB_MONITOR_NAME_TEMPLATE.format(
                 self.repo_config.repo_name.replace('/', ' ')[:-1]),
