@@ -13,11 +13,10 @@ from src.data_store.stores.store import Store
 
 from src.data_store.starters import (
     _initialise_store_logger, _initialise_store, start_system_store,
-    start_github_store, start_alert_store, start_store)
+    start_github_store, start_alert_store)
 
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME)
+from src.utils.constants import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
+                                 ALERT_STORE_NAME)
 
 from src.utils import env
 
