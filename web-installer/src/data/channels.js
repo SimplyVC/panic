@@ -44,7 +44,7 @@ export default {
   alerts: {
     title: 'Types of Alerts',
     info:
-      "INFO: Alerts of this type have little to zero severity but consists of information "
+      'INFO: Alerts of this type have little to zero severity but consists of information '
       + 'which is still important to acknowledge. Info alerts also include positive events. '
       + "Example: System's storage usage is no longer at a critical level.",
     warning:
@@ -100,7 +100,8 @@ export default {
       + 'a message on Telegram or a phone call. Email alerts also require '
       + 'an SMTP server to be set up for the alerter to be able to send alerts.',
     port: 'This is the port number at which the SMTP server can be accessed '
-      + 'through',
+      + 'through. Normally this is port number 25 but it would vary depending '
+      + 'on your email server setup.',
     smtp:
       "This is the SMTP server's address, which is used to send the emails.",
     name: 'This will be used to identify the saved email configuration.',
