@@ -30,15 +30,23 @@ class TestAlertersStarters(unittest.TestCase):
         self.github_store_name = 'test_github_store'
         self.system_store_name = 'test_github_store'
         self.alerter_store_name = 'test_github_store'
-
+        self.connection_check_time_interval = timedelta(seconds=0)
+        self.rabbit_ip = env.RABBIT_IP
+        self.rabbitmq = RabbitMQApi(
+            self.dummy_logger, self.rabbit_ip,
+            connection_check_time_interval=self.connection_check_time_interval)
         self.test_github_store = GithubStore(GITHUB_STORE_NAME,
-                                             self.dummy_logger)
+                                             self.dummy_logger,
+                                             self.rabbitmq)
         self.test_system_store = SystemStore(SYSTEM_STORE_NAME,
-                                             self.dummy_logger)
+                                             self.dummy_logger,
+                                             self.rabbitmq)
         self.test_alert_store = AlertStore(ALERT_STORE_NAME,
-                                           self.dummy_logger)
+                                           self.dummy_logger,
+                                           self.rabbitmq)
 
     def tearDown(self) -> None:
+        self.rabbitmq = None
         self.dummy_logger = None
         self.store_name = ''
 
@@ -102,49 +110,60 @@ class TestAlertersStarters(unittest.TestCase):
             AlertStore.__name__
         )
 
+    @mock.patch("src.data_store.starters.RabbitMQApi")
     @mock.patch("src.data_store.starters._initialise_store_logger")
     @mock.patch("src.data_store.starters.GithubStore")
     def test_initialise_store_creates_github_store_correctly(
-            self, mock_github_store, mock_init_logger) -> None:
+            self, mock_github_store, mock_init_logger, mock_rabbit) -> None:
         mock_init_logger.return_value = self.dummy_logger
         mock_github_store.__name__ = 'GithubStore'
-
+        mock_rabbit.__name__ = 'RabbitMQApi'
+        mock_rabbit.return_value = self.rabbitmq
         _initialise_store(mock_github_store, GITHUB_STORE_NAME)
 
         mock_init_logger.assert_called_once()
         mock_github_store.assert_called_once_with(
             GITHUB_STORE_NAME,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq
         )
 
+    @mock.patch("src.data_store.starters.RabbitMQApi")
     @mock.patch("src.data_store.starters._initialise_store_logger")
     @mock.patch("src.data_store.starters.SystemStore")
     def test_initialise_store_creates_system_store_correctly(
-            self, mock_system_store, mock_init_logger) -> None:
+            self, mock_system_store, mock_init_logger, mock_rabbit) -> None:
         mock_init_logger.return_value = self.dummy_logger
         mock_system_store.__name__ = 'SystemStore'
+        mock_rabbit.__name__ = 'RabbitMQApi'
+        mock_rabbit.return_value = self.rabbitmq
 
         _initialise_store(mock_system_store, SYSTEM_STORE_NAME)
 
         mock_init_logger.assert_called_once()
         mock_system_store.assert_called_once_with(
             SYSTEM_STORE_NAME,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq
         )
 
+    @mock.patch("src.data_store.starters.RabbitMQApi")
     @mock.patch("src.data_store.starters._initialise_store_logger")
     @mock.patch("src.data_store.starters.AlertStore")
     def test_initialise_store_creates_alert_store_correctly(
-            self, mock_alert_store, mock_init_logger) -> None:
+            self, mock_alert_store, mock_init_logger, mock_rabbit) -> None:
         mock_init_logger.return_value = self.dummy_logger
         mock_alert_store.__name__ = 'AlertStore'
+        mock_rabbit.__name__ = 'RabbitMQApi'
+        mock_rabbit.return_value = self.rabbitmq
 
         _initialise_store(mock_alert_store, ALERT_STORE_NAME)
 
         mock_init_logger.assert_called_once()
         mock_alert_store.assert_called_once_with(
             ALERT_STORE_NAME,
-            self.dummy_logger
+            self.dummy_logger,
+            self.rabbitmq
         )
 
     @mock.patch("src.data_store.starters.SystemStore")
