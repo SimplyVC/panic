@@ -268,10 +268,10 @@ These will be used later in the Web-Installer to be saved in the configuration f
 - It is assumed that a user has previously used **Opsgenie** and has an **Opsgenie Account**, if not head to the [Opsgenie sign-up page](https://www.atlassian.com/software/opsgenie/try) and sign up using your details.
 - Let's go through the process of setting up your API.
     1. Click on `Integrate with Jira and your monitoring tools` on your home page.
-      1. Make sure `API` integration is selected
-      2. Click `Save integrations`
-      3. Click `Now, go to the integrations page and explore`
-    2. Navigate to the API you just set up and take note of `API Key`.
+    2. Make sure `API` integration is selected
+    3. Click `Save integrations`
+    4. Click `Now, go to the integrations page and explore`
+    5. Navigate to the API you just set up and take note of `API Key`.
 
 **At the end, you should have:**
 1. The API token

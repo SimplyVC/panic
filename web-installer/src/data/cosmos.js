@@ -35,7 +35,7 @@ export default {
       + 'there is no direct Prometheus monitoring of the KMS system. '
       + 'Therefore for now you will monitor the System of the running '
       + 'KMS software through Node Exporter.',
-    exporterUrlHolder: 'http://192.0.2.0:9100',
+    exporterUrlHolder: 'http://192.0.2.0:9100/metrics',
     nameHolder: 'Cosmos_KMS_Config_1',
     nameTip: 'This will be used to identify the current KMS configuration.',
     exporterUrlTip:
@@ -73,7 +73,7 @@ export default {
     prometheusTip:
       'This IP address will be used to monitor prometheus based '
       + 'statistics, if omitted they will not be monitored and alerted on.',
-    exporterUrlHolder: 'http://192.0.2.0:9100',
+    exporterUrlHolder: 'http://192.0.2.0:9100/metrics',
     exporterUrlTip:
       'This IP address will be used to monitor node exporter '
       + 'statistics, if omitted they will not be monitored and alerted on.',
