@@ -1,19 +1,19 @@
+import copy
 import logging
 import unittest
 from datetime import timedelta
 from unittest import mock
-import copy
 
-from src.configs.system_alerts import SystemAlertsConfig
-from src.message_broker.rabbitmq import RabbitMQApi
-from src.alerter.alerters.github import GithubAlerter
-from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerter_starters import (
     _initialise_alerter_logger, _initialise_system_alerter,
     _initialise_github_alerter, start_github_alerter,
     start_system_alerter)
-from src.utils.constants import SYSTEM_ALERTER_NAME_TEMPLATE
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.system import SystemAlerter
+from src.configs.system_alerts import SystemAlertsConfig
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants import SYSTEM_ALERTER_NAME_TEMPLATE
 
 
 # Tests adapted from monitor starters

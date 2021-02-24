@@ -9,10 +9,11 @@ export default {
     + ' are monitored through Node Exporter, so that will need to be '
     + 'installed on each system you want to monitor. A suggestion is '
     + "to give your configuration a name that includes the system's "
-    + 'IP address such as system_1_172.32.123.43 .',
+    + 'IP address such as system_1_(172.32.123.43). Do not use [] in your '
+    + 'names as you will not be able to load the configuration.',
   name: 'This will be used to identify the current System configuration.',
-  name_holder: 'system_1_192.0.2.0',
-  exporter_url_holder: 'http://192.0.2.0:9100',
+  name_holder: 'system_1_(192.0.2.0)',
+  exporter_url_holder: 'http://192.0.2.0:9100/metrics',
   exporter_url: 'This is the node exporter url of your system.',
   monitor_system: 'Set to True if you want your system monitored.',
 };
