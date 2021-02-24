@@ -39,12 +39,13 @@ export default {
       + 'will enter a unique identifier so as a user you will know '
       + 'which node is being alerted on. A suggestion would be to add '
       + 'the IP Address to the node name e.g '
-      + 'polkadot_main_validator[192.0.2.0] so that you will know '
-      + 'straight away where to look for the node. If you want the '
-      + 'system which your node is running on to be monitored for '
+      + 'polkadot_main_validator(192.0.2.0) so that you will know '
+      + 'straight away where to look for the node. Do not use [] in your '
+      + 'names as you will not be able to load the configuration. If you want '
+      + 'the system which your node is running on to be monitored for '
       + 'system metrics such as RAM and CPU usage please install '
       + 'Node Exporter on it.',
-    nameHolder: 'polkadot_node_1[192.0.2.0]',
+    nameHolder: 'polkadot_node_1(192.0.2.0)',
     nameTip: 'This unique identifier will be used to identify your node.',
     websocketHolder: 'ws://122.321.32.12:9944',
     websocketTip:
