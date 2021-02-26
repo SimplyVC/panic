@@ -16,8 +16,8 @@ from src.data_transformers.starters import (_initialise_transformer_logger,
 from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import SYSTEM_DATA_TRANSFORMER_NAME, \
-    GITHUB_DATA_TRANSFORMER_NAME
+from src.utils.constants import (SYSTEM_DATA_TRANSFORMER_NAME,
+                                 GITHUB_DATA_TRANSFORMER_NAME)
 
 
 class TestDataTransformersStarters(unittest.TestCase):
