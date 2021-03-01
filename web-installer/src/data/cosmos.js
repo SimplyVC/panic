@@ -35,7 +35,7 @@ export default {
       + 'there is no direct Prometheus monitoring of the KMS system. '
       + 'Therefore for now you will monitor the System of the running '
       + 'KMS software through Node Exporter.',
-    exporterUrlHolder: 'http://192.0.2.0:9100',
+    exporterUrlHolder: 'http://192.0.2.0:9100/metrics',
     nameHolder: 'Cosmos_KMS_Config_1',
     nameTip: 'This will be used to identify the current KMS configuration.',
     exporterUrlTip:
@@ -54,12 +54,13 @@ export default {
       + 'will enter a unique identifier so as a user you will know '
       + 'which node is being alerted on. A suggestion would be to add '
       + 'the IP Address to the node name e.g '
-      + 'cosmos_main_validator[192.0.2.0] so that you will know '
-      + 'straight away where to look for the node. If you want the '
-      + 'system which your node is running on to be monitored for '
+      + 'cosmos_main_validator(192.0.2.0) so that you will know '
+      + 'straight away where to look for the node. Do not use [] in your '
+      + 'names as you will not be able to load the configuration. If you want '
+      + 'the system which your node is running on to be monitored for '
       + 'system metrics such as RAM and CPU usage please install '
       + 'Node Exporter on it.',
-    nameHolder: 'cosmos_node_1[192.0.2.0]',
+    nameHolder: 'cosmos_node_1(192.0.2.0)',
     nameTip: 'This unique identifier will be used to identify your node.',
     tendermintHolder: 'http://192.0.2.0:26657',
     tendermintTip:
@@ -73,7 +74,7 @@ export default {
     prometheusTip:
       'This IP address will be used to monitor prometheus based '
       + 'statistics, if omitted they will not be monitored and alerted on.',
-    exporterUrlHolder: 'http://192.0.2.0:9100',
+    exporterUrlHolder: 'http://192.0.2.0:9100/metrics',
     exporterUrlTip:
       'This IP address will be used to monitor node exporter '
       + 'statistics, if omitted they will not be monitored and alerted on.',
