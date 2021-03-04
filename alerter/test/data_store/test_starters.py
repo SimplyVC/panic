@@ -9,14 +9,15 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.data_store.stores.alert import AlertStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.system import SystemStore
+from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.store import Store
 
 from src.data_store.starters import (
     _initialise_store_logger, _initialise_store, start_system_store,
-    start_github_store, start_alert_store)
+    start_github_store, start_alert_store, start_config_store)
 
 from src.utils.constants import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
-                                 ALERT_STORE_NAME)
+                                 ALERT_STORE_NAME, CONFIG_STORE_NAME)
 
 from src.utils import env
 
@@ -44,6 +45,9 @@ class TestAlertersStarters(unittest.TestCase):
         self.test_alert_store = AlertStore(ALERT_STORE_NAME,
                                            self.dummy_logger,
                                            self.rabbitmq)
+        self.test_config_store = ConfigStore(CONFIG_STORE_NAME,
+                                             self.dummy_logger,
+                                             self.rabbitmq)
 
     def tearDown(self) -> None:
         self.rabbitmq = None
@@ -210,3 +214,18 @@ class TestAlertersStarters(unittest.TestCase):
 
         mock_init_logger.assert_called_once()
         mock_start_store.assert_called_once_with(self.test_alert_store)
+
+    @mock.patch("src.data_store.starters.ConfigStore")
+    @mock.patch("src.data_store.starters._initialise_store_logger")
+    @mock.patch("src.data_store.starters.start_store")
+    def test_start_config_store_calls_sub_functions_correctly(
+            self, mock_start_store, mock_init_logger,
+            mock_config_store) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_config_store.__name__ = 'ConfigStore'
+        mock_config_store.return_value = self.test_config_store
+
+        start_config_store()
+
+        mock_init_logger.assert_called_once()
+        mock_start_store.assert_called_once_with(self.test_config_store)
