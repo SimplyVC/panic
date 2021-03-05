@@ -7,6 +7,7 @@ from unittest import mock
 import pika
 from freezegun import freeze_time
 from parameterized import parameterized
+from pika.exceptions import AMQPConnectionError, AMQPChannelError
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
 from src.alerter.alerts.system_alerts import (
@@ -22,6 +23,7 @@ from src.data_store.redis import RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.exceptions import MessageWasNotDeliveredException
 
 
 class TestTelegramCommandsHandler(unittest.TestCase):
@@ -387,28 +389,165 @@ class TestTelegramCommandsHandler(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @freeze_time("2012-01-01")
+    @mock.patch.object(TelegramCommandsHandler, "_start_handling")
+    @mock.patch.object(TelegramCommandsHandler, "_send_heartbeat")
     def test_process_ping_sends_correct_heartbeat_if_updater_is_not_running(
-            self) -> None:
-        pass
+            self, mock_send_hb, mock_start_handling) -> None:
+        # We will perform this test by checking that send_hb is called with the
+        # correct heartbeat. The actual sending was already tested above.
+        mock_send_hb.return_value = None
+        mock_start_handling.return_value = None
+        self.test_telegram_commands_handler._updater.running = False
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_telegram_commands_handler._initialise_rabbitmq()
+            blocking_channel = \
+                self.test_telegram_commands_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=TCH_INPUT_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
 
-    def test_process_ping_restarts_updater_if_it_is_dead(self) -> None:
-        # TODO: Check if we do it correctly, even if dispatcher is dead what
-        #     : happens?
-        pass
+            self.test_telegram_commands_handler._process_ping(blocking_channel,
+                                                              method,
+                                                              properties, body)
 
-    def test_process_ping_does_not_restart_updater_if_it_is_alive(self) -> None:
-        pass
+            expected_hb = {
+                'component_name': self.test_handler_name,
+                'is_alive': False,
+                'timestamp': datetime.now().timestamp()
+            }
+            mock_send_hb.assert_called_once_with(expected_hb)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(TelegramCommandsHandler, "_start_handling")
+    @mock.patch.object(TelegramCommandsHandler, "_send_heartbeat")
+    def test_process_ping_restarts_updater_if_it_is_dead(
+            self, mock_send_hb, mock_start_handling) -> None:
+        mock_send_hb.return_value = None
+        mock_start_handling.return_value = None
+        self.test_telegram_commands_handler._updater.running = False
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_telegram_commands_handler._initialise_rabbitmq()
+            blocking_channel = \
+                self.test_telegram_commands_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=TCH_INPUT_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_telegram_commands_handler._process_ping(blocking_channel,
+                                                              method,
+                                                              properties, body)
+
+            mock_start_handling.assert_called_once_with(run_in_background=True)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(TelegramCommandsHandler, "_start_handling")
+    @mock.patch.object(TelegramCommandsHandler, "_send_heartbeat")
+    def test_process_ping_does_not_restart_updater_if_it_is_alive(
+            self, mock_send_hb, mock_start_handling) -> None:
+        mock_send_hb.return_value = None
+        mock_start_handling.return_value = None
+        self.test_telegram_commands_handler._updater.running = True
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_telegram_commands_handler._initialise_rabbitmq()
+            blocking_channel = \
+                self.test_telegram_commands_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=TCH_INPUT_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.test_telegram_commands_handler._process_ping(blocking_channel,
+                                                              method,
+                                                              properties, body)
+
+            mock_start_handling.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(TelegramCommandsHandler, "_start_handling")
+    @mock.patch.object(TelegramCommandsHandler, "_send_heartbeat")
     def test_process_ping_does_not_send_heartbeat_if_error_when_computing_hb(
-            self) -> None:
-        # TODO: Raise different errors from running etc
-        pass
+            self, mock_send_hb, mock_start_handling) -> None:
+        # In this case an exception may only be raised if the updater is
+        # restarted.
+        mock_send_hb.return_value = None
+        mock_start_handling.side_effect = Exception('test')
+        self.test_telegram_commands_handler._updater.running = False
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_telegram_commands_handler._initialise_rabbitmq()
+            blocking_channel = \
+                self.test_telegram_commands_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=TCH_INPUT_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
 
+            self.test_telegram_commands_handler._process_ping(blocking_channel,
+                                                              method,
+                                                              properties, body)
+
+            mock_send_hb.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch.object(TelegramCommandsHandler, "_send_heartbeat")
     def test_process_ping_does_not_raise_msg_was_not_delivered_exception(
-            self) -> None:
-        pass
+            self, mock_send_hb) -> None:
+        # In this case an exception may only be raised if the updater is
+        # restarted.
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
+        self.test_telegram_commands_handler._updater.running = True
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_telegram_commands_handler._initialise_rabbitmq()
+            blocking_channel = \
+                self.test_telegram_commands_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=TCH_INPUT_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
 
+            self.test_telegram_commands_handler._process_ping(blocking_channel,
+                                                              method,
+                                                              properties, body)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @parameterized.expand([
+        (AMQPConnectionError, AMQPConnectionError('test'),),
+        (AMQPChannelError, AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(TelegramCommandsHandler, "_send_heartbeat")
     def test_process_ping_raises_error_if_raised_by_send_heartbeat(
-            self) -> None:
-        # TODO: Test multiple errors like before
-        pass
+            self, exception_class, exception_instance,
+            mock_send_heartbeat) -> None:
+        # For this test we will check for channel, connection and unexpected
+        # errors.
+        mock_send_heartbeat.side_effect = exception_instance
+        self.test_telegram_commands_handler._updater.running = True
+        try:
+            # Some of the variables below are needed as parameters for the
+            # process_ping function
+            self.test_telegram_commands_handler._initialise_rabbitmq()
+            blocking_channel = \
+                self.test_telegram_commands_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(routing_key=TCH_INPUT_ROUTING_KEY)
+            body = 'ping'
+            properties = pika.spec.BasicProperties()
+
+            self.assertRaises(
+                exception_class,
+                self.test_telegram_commands_handler._process_ping,
+                blocking_channel, method, properties, body)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
