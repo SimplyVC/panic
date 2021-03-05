@@ -120,7 +120,7 @@ class TelegramCommandsHandler(ChannelHandler):
         heartbeat = {}
         try:
             heartbeat['component_name'] = self.handler_name
-            heartbeat['running_processes'] = self._updater.running
+            heartbeat['is_alive'] = self._updater.running
             heartbeat['timestamp'] = datetime.now().timestamp()
 
             # If updater is not running, try to restart it.

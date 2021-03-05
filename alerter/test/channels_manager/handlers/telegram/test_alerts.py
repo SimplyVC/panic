@@ -58,6 +58,7 @@ class TestTelegramAlertsHandler(unittest.TestCase):
         self.test_timestamp = 45676565.556
         self.test_heartbeat = {
             'component_name': 'Test Component',
+            'is_alive': True,
             'timestamp': self.test_timestamp,
         }
         self.test_system_name = 'test_system'
@@ -479,6 +480,7 @@ class TestTelegramAlertsHandler(unittest.TestCase):
 
             expected_heartbeat = {
                 'component_name': self.test_handler_name,
+                'is_alive': True,
                 'timestamp': datetime.now().timestamp()
             }
             mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
