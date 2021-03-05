@@ -284,6 +284,23 @@ class TestConfigStore(unittest.TestCase):
             }
         }
 
+        self.email_config_1 = {
+            "email_01b23d79-10f5-4815-a11f-034f53974b23": {
+                "id": "email_01b23d79-10f5-4815-a11f-034f53974b23",
+                "channel_name": "main_email_channel",
+                "port": "25",
+                "smtp": "exchange.olive.com",
+                "email_from": "internal-notifications@olive-vc.com.mt",
+                "emails_to": "vitaly@olive-vc.com.mt",
+                "info": "true",
+                "warning": "true",
+                "critical": "true",
+                "error": "true",
+                "parent_ids": "chain_name_7f4bc842-21b1-4bcb-8ab9-d86e08149548,chain_name_94aafe04-8287-463a-8416-0401852b3ca2,GLOBAL",
+                "parent_names": "cosmos,kusama,GLOBAL"
+            }
+        }
+
         self.config_data_unexpected = {
             "unexpected": {}
         }
@@ -361,250 +378,330 @@ class TestConfigStore(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    # @parameterized.expand([
-    #     ("self.config_data_1", ),
-    #     ("self.config_data_2", ),
-    #     ("self.config_data_3", ),
-    # ])
-    # @mock.patch.object(RedisApi, "hset_multiple")
-    # def test_process_redis_store_redis_is_called_correctly(
-    #         self, mock_config_data, mock_hset_multiple) -> None:
+    @parameterized.expand([
+        ("self.nodes_config_1", "self.routing_key_1"),
+        ("self.alerts_config_1", "self.routing_key_2"),
+        ("self.repos_config_1", "self.routing_key_3"),
+        ("self.repos_config_1", "self.routing_key_4"),
+        ("self.alerts_config_1", "self.routing_key_5"),
+        ("self.systems_config_1", "self.routing_key_6"),
+        ("self.email_config_1", "self.routing_key_7"),
+        ("self.pagerduty_config_1", "self.routing_key_8"),
+        ("self.opsgenie_config_1", "self.routing_key_9"),
+        ("self.telegram_config_1", "self.routing_key_10"),
+        ("self.twilio_config_1", "self.routing_key_11"),
+    ])
+    @mock.patch.object(RedisApi, "hset")
+    def test_process_data_sort_redis_is_called_correctly(
+            self, mock_config_data, mock_routing_key,
+            mock_hset) -> None:
 
-    #     data = eval(mock_config_data)
-    #     self.test_store._process_redis_store(data)
+        data = eval(mock_config_data)
+        routing_key = eval(mock_routing_key).split('.')
+        self.test_store._process_data_sort(routing_key, data)
 
-    #     meta_data = data['result']['meta_data']
-    #     repo_name = meta_data['repo_name']
-    #     repo_id = meta_data['repo_id']
-    #     parent_id = meta_data['repo_parent_id']
-    #     metrics = data['result']['data']
+        if routing_key[0] in ['general', 'channels']:
+            if routing_key[1] in ['systems_config', 'alerts_config',
+                                  'repos_config', 'opsgenie_config',
+                                  'pagerduty_config', 'telegram_config',
+                                  'email_config', 'twilio_config']:
+                parent_id = routing_key[0]
+                config_type = routing_key[1]
+        elif 'chains' == routing_key[0]:
+            if routing_key[3] in ['nodes_config', 'alerts_config',
+                                  'repos_config']:
+                parent_id = routing_key[1] + '.' + routing_key[2]
+                config_type = routing_key[3]
 
-    #     call_1 = call(Keys.get_hash_parent(parent_id), {
-    #                   Keys.get_config_no_of_releases(repo_id):
-    #                   str(metrics['no_of_releases']),
-    #                   Keys.get_config_last_monitored(repo_id):
-    #                   str(meta_data['last_monitored']),
-    #                   })
-    #     mock_hset_multiple.assert_has_calls([call_1])
+        call_1 = call(Keys.get_hash_parent(parent_id),
+                      Keys.get_config(config_type),
+                      json.dumps(data))
+
+        mock_hset.assert_has_calls([call_1])
 
     def test_process_redis_store_does_nothing_on_error_key(self) -> None:
         self.test_store._process_redis_store(self.test_parent_id,
                                              self.test_config_type,
                                              self.config_data_unexpected)
 
-    def test_process_redis_store_raises_exception_on_unexpected_key(
+    @parameterized.expand([
+        ("self.nodes_config_1", "self.routing_key_1"),
+        ("self.alerts_config_1", "self.routing_key_2"),
+        ("self.repos_config_1", "self.routing_key_3"),
+        ("self.repos_config_1", "self.routing_key_4"),
+        ("self.alerts_config_1", "self.routing_key_5"),
+        ("self.systems_config_1", "self.routing_key_6"),
+        ("self.email_config_1", "self.routing_key_7"),
+        ("self.pagerduty_config_1", "self.routing_key_8"),
+        ("self.opsgenie_config_1", "self.routing_key_9"),
+        ("self.telegram_config_1", "self.routing_key_10"),
+        ("self.twilio_config_1", "self.routing_key_11"),
+    ])
+    def test_process_data_sort_redis_stores_correctly(
+            self, mock_config_data, mock_routing_key) -> None:
+
+        data = eval(mock_config_data)
+        routing_key = eval(mock_routing_key).split('.')
+        self.test_store._process_data_sort(routing_key, data)
+
+        if routing_key[0] in ['general', 'channels']:
+            if routing_key[1] in ['systems_config', 'alerts_config',
+                                  'repos_config', 'opsgenie_config',
+                                  'pagerduty_config', 'telegram_config',
+                                  'email_config', 'twilio_config']:
+                parent_id = routing_key[0]
+                config_type = routing_key[1]
+        elif 'chains' == routing_key[0]:
+            if routing_key[3] in ['nodes_config', 'alerts_config',
+                                  'repos_config']:
+                parent_id = routing_key[1] + '.' + routing_key[2]
+                config_type = routing_key[3]
+
+        self.assertEqual(data, json.loads(
+            self.redis.hget(Keys.get_hash_parent(parent_id),
+                            Keys.get_config(config_type)).decode(
+                                "utf-8")))
+
+    @parameterized.expand([
+        ("self.nodes_config_1", "self.routing_key_1"),
+        ("self.alerts_config_1", "self.routing_key_2"),
+        ("self.repos_config_1", "self.routing_key_3"),
+        ("self.repos_config_1", "self.routing_key_4"),
+        ("self.alerts_config_1", "self.routing_key_5"),
+        ("self.systems_config_1", "self.routing_key_6"),
+        ("self.email_config_1", "self.routing_key_7"),
+        ("self.pagerduty_config_1", "self.routing_key_8"),
+        ("self.opsgenie_config_1", "self.routing_key_9"),
+        ("self.telegram_config_1", "self.routing_key_10"),
+        ("self.twilio_config_1", "self.routing_key_11"),
+    ])
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+                autospec=True)
+    def test_process_data_saves_in_redis(self, mock_config_data,
+                                         mock_routing_key, mock_send_hb,
+                                         mock_ack) -> None:
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False, True,
+                                       False, False)
+        mock_ack.return_value = None
+        try:
+            data = eval(mock_config_data)
+            routing_key = eval(mock_routing_key).split('.')
+
+            self.test_store._initialise_rabbitmq()
+
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=eval(mock_routing_key))
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(data).encode()
+            )
+            mock_ack.assert_called_once()
+            mock_send_hb.assert_called_once()
+
+            if routing_key[0] in ['general', 'channels']:
+                if routing_key[1] in ['systems_config', 'alerts_config',
+                                      'repos_config', 'opsgenie_config',
+                                      'pagerduty_config', 'telegram_config',
+                                      'email_config', 'twilio_config']:
+                    parent_id = routing_key[0]
+                    config_type = routing_key[1]
+            elif 'chains' == routing_key[0]:
+                if routing_key[3] in ['nodes_config', 'alerts_config',
+                                      'repos_config']:
+                    parent_id = routing_key[1] + '.' + routing_key[2]
+                    config_type = routing_key[3]
+
+            self.assertEqual(data, json.loads(
+                self.redis.hget(Keys.get_hash_parent(parent_id),
+                                Keys.get_config(config_type)).decode(
+                                    "utf-8")))
+
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @freeze_time("2012-01-01")
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.config.ConfigStore._process_redis_store",
+                autospec=True)
+    def test_process_data_sends_heartbeat_correctly(self,
+                                                    mock_process_redis_store,
+                                                    mock_basic_ack) -> None:
+
+        mock_basic_ack.return_value = None
+        try:
+            self.test_rabbit_manager.connect()
+            self.test_store._initialise_rabbitmq()
+
+            self.test_rabbit_manager.queue_delete(self.test_queue_name)
+            res = self.test_rabbit_manager.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+
+            self.test_rabbit_manager.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.routing_key)
+
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=self.routing_key_1)
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(self.nodes_config_1).encode()
+            )
+
+            res = self.test_rabbit_manager.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(1, res.method.message_count)
+
+            heartbeat_test = {
+                'component_name': self.test_store_name,
+                'timestamp': datetime(2012, 1, 1).timestamp()
+            }
+
+            _, _, body = self.test_rabbit_manager.basic_get(
+                self.test_queue_name)
+            self.assertEqual(heartbeat_test, json.loads(body))
+            mock_process_redis_store.assert_called_once()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    def test_process_data_doesnt_send_heartbeat_on_processing_error(
+            self, mock_basic_ack) -> None:
+
+        mock_basic_ack.return_value = None
+        try:
+            self.test_rabbit_manager.connect()
+            self.test_store._initialise_rabbitmq()
+
+            self.test_rabbit_manager.queue_delete(self.test_queue_name)
+            res = self.test_rabbit_manager.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=False
+            )
+            self.assertEqual(0, res.method.message_count)
+
+            self.test_rabbit_manager.queue_bind(
+                queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.routing_key)
+
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key='0')
+
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(self.nodes_config_1).encode()
+            )
+
+            res = self.test_rabbit_manager.queue_declare(
+                queue=self.test_queue_name, durable=True, exclusive=False,
+                auto_delete=False, passive=True
+            )
+            self.assertEqual(0, res.method.message_count)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    def test_process_data_sort_raises_exception_on_unexpected_routing_key(
             self) -> None:
         self.assertRaises(ReceivedUnexpectedDataException,
-                          self.test_store._process_redis_store,
-                          self.test_parent_id,
-                          self.test_config_type,
-                          self.config_data_unexpected)
+                          self.test_store._process_data_sort,
+                          ['0', 'repos_config'],
+                          self.repos_config_1)
 
+    @parameterized.expand([
+        ("self.nodes_config_1", "self.routing_key_1"),
+        ("self.alerts_config_1", "self.routing_key_2"),
+        ("self.repos_config_1", "self.routing_key_3"),
+        ("self.repos_config_1", "self.routing_key_4"),
+        ("self.alerts_config_1", "self.routing_key_5"),
+        ("self.systems_config_1", "self.routing_key_6"),
+        ("self.email_config_1", "self.routing_key_7"),
+        ("self.pagerduty_config_1", "self.routing_key_8"),
+        ("self.opsgenie_config_1", "self.routing_key_9"),
+        ("self.telegram_config_1", "self.routing_key_10"),
+        ("self.twilio_config_1", "self.routing_key_11"),
+    ])
+    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
+                autospec=True)
+    def test_process_data_saves_in_redis_then_removes_it_on_empty_config(
+        self, mock_config_data, mock_routing_key, mock_send_hb,
+            mock_ack) -> None:
 
-    # @parameterized.expand([
-    #     ("self.config_data_1", ),
-    #     ("self.config_data_2", ),
-    #     ("self.config_data_3", ),
-    # ])
-    # def test_process_redis_store_redis_stores_correctly(
-    #         self, mock_config_data) -> None:
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False, True,
+                                       False, False)
+        mock_ack.return_value = None
+        try:
+            data = eval(mock_config_data)
+            routing_key = eval(mock_routing_key).split('.')
 
-    #     data = eval(mock_config_data)
-    #     self.test_store._process_redis_store(data)
+            self.test_store._initialise_rabbitmq()
 
-    #     meta_data = data['result']['meta_data']
-    #     repo_name = meta_data['repo_name']
-    #     repo_id = meta_data['repo_id']
-    #     parent_id = meta_data['repo_parent_id']
-    #     metrics = data['result']['data']
+            blocking_channel = self.test_store.rabbitmq.channel
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=eval(mock_routing_key))
 
-    #     self.assertEqual(str(metrics['no_of_releases']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                      Keys.get_config_no_of_releases(repo_id)).decode(
-    #                         "utf-8"))
-    #     self.assertEqual(str(meta_data['last_monitored']),
-    #                      self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                      Keys.get_config_last_monitored(repo_id)).decode(
-    #                         "utf-8"))
+            properties = pika.spec.BasicProperties()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(data).encode()
+            )
+            mock_ack.assert_called_once()
+            mock_send_hb.assert_called_once()
 
-    # @parameterized.expand([
-    #     ("self.config_data_1", ),
-    #     ("self.config_data_2", ),
-    #     ("self.config_data_3", ),
-    # ])
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # def test_process_data_saves_in_redis(self, mock_config_data, mock_send_hb,
-    #                                      mock_ack) -> None:
-    #     self.rabbitmq.connect()
-    #     self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "direct", False, True,
-    #                                    False, False)
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-    #         data = eval(mock_config_data)
+            if routing_key[0] in ['general', 'channels']:
+                if routing_key[1] in ['systems_config', 'alerts_config',
+                                      'repos_config', 'opsgenie_config',
+                                      'pagerduty_config', 'telegram_config',
+                                      'email_config', 'twilio_config']:
+                    parent_id = routing_key[0]
+                    config_type = routing_key[1]
+            elif 'chains' == routing_key[0]:
+                if routing_key[3] in ['nodes_config', 'alerts_config',
+                                      'repos_config']:
+                    parent_id = routing_key[1] + '.' + routing_key[2]
+                    config_type = routing_key[3]
 
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=STORE_CONFIGS_ROUTING_KEY_CHAINS)
+            self.assertEqual(data, json.loads(
+                self.redis.hget(Keys.get_hash_parent(parent_id),
+                                Keys.get_config(config_type)).decode(
+                                    "utf-8")))
 
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(data).encode()
-    #         )
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_called_once()
+            self.test_store._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps({}).encode()
+            )
 
-    #         meta_data = data['result']['meta_data']
-    #         repo_name = meta_data['repo_name']
-    #         repo_id = meta_data['repo_id']
-    #         parent_id = meta_data['repo_parent_id']
-    #         metrics = data['result']['data']
-
-    #         self.assertEqual(str(metrics['no_of_releases']),
-    #                          self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                          Keys.get_config_no_of_releases(repo_id)).decode(
-    #                             "utf-8"))
-    #         self.assertEqual(str(meta_data['last_monitored']),
-    #                          self.redis.hget(Keys.get_hash_parent(parent_id),
-    #                          Keys.get_config_last_monitored(repo_id)).decode(
-    #                             "utf-8"))
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-
-    # @parameterized.expand([
-    #     ("KeyError", "self.config_data_key_error "),
-    #     ("ReceivedUnexpectedDataException", "self.config_data_unexpected"),
-    # ])
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-    #             autospec=True)
-    # def test_process_data_with_bad_data_does_raises_exceptions(
-    #         self, mock_error, mock_bad_data, mock_send_hb, mock_ack) -> None:
-    #     self.rabbitmq.connect()
-    #     self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "direct", False, True,
-    #                                    False, False)
-    #     mock_ack.return_value = None
-    #     try:
-    #         self.test_store._initialise_rabbitmq()
-
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=STORE_CONFIGS_ROUTING_KEY_CHAINS)
-
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(self.config_data_unexpected).encode()
-    #         )
-    #         self.assertRaises(eval(mock_error),
-    #                           self.test_store._process_redis_store,
-    #                           eval(mock_bad_data))
-    #         mock_ack.assert_called_once()
-    #         mock_send_hb.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-
-    # @freeze_time("2012-01-01")
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # @mock.patch("src.data_store.stores.config.ConfigStore._process_redis_store",
-    #             autospec=True)
-    # def test_process_data_sends_heartbeat_correctly(self,
-    #                                                 mock_process_redis_store,
-    #                                                 mock_basic_ack) -> None:
-
-    #     mock_basic_ack.return_value = None
-    #     try:
-    #         self.test_rabbit_manager.connect()
-    #         self.test_store._initialise_rabbitmq()
-
-    #         self.test_rabbit_manager.queue_delete(self.test_queue_name)
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-
-    #         self.test_rabbit_manager.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key=self.routing_key)
-
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=STORE_CONFIGS_ROUTING_KEY_CHAINS)
-
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(self.config_data_1).encode()
-    #         )
-
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(1, res.method.message_count)
-
-    #         heartbeat_test = {
-    #             'component_name': self.test_store_name,
-    #             'timestamp': datetime(2012, 1, 1).timestamp()
-    #         }
-
-    #         _, _, body = self.test_rabbit_manager.basic_get(
-    #             self.test_queue_name)
-    #         self.assertEqual(heartbeat_test, json.loads(body))
-    #         mock_process_redis_store.assert_called_once()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-
-    # @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-    #             autospec=True)
-    # def test_process_data_doesnt_send_heartbeat_on_processing_error(
-    #         self, mock_basic_ack) -> None:
-
-    #     mock_basic_ack.return_value = None
-    #     try:
-    #         self.test_rabbit_manager.connect()
-    #         self.test_store._initialise_rabbitmq()
-
-    #         self.test_rabbit_manager.queue_delete(self.test_queue_name)
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=False
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-
-    #         self.test_rabbit_manager.queue_bind(
-    #             queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-    #             routing_key=self.routing_key)
-
-    #         blocking_channel = self.test_store.rabbitmq.channel
-    #         method_chains = pika.spec.Basic.Deliver(
-    #             routing_key=STORE_CONFIGS_ROUTING_KEY_CHAINS)
-
-    #         properties = pika.spec.BasicProperties()
-    #         self.test_store._process_data(
-    #             blocking_channel,
-    #             method_chains,
-    #             properties,
-    #             json.dumps(self.config_data_unexpected).encode()
-    #         )
-
-    #         res = self.test_rabbit_manager.queue_declare(
-    #             queue=self.test_queue_name, durable=True, exclusive=False,
-    #             auto_delete=False, passive=True
-    #         )
-    #         self.assertEqual(0, res.method.message_count)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
+            self.assertEqual(None,
+                             self.redis.hget(Keys.get_hash_parent(parent_id),
+                                             Keys.get_config(config_type)))
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
