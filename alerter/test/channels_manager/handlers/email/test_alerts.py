@@ -217,8 +217,8 @@ class TestEmailAlertsHandler(unittest.TestCase):
             # with the same routing key to any exchange at this point.
             self.test_email_alerts_handler.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key=
-                self.test_email_alerts_handler._email_channel_routing_key,
+                routing_key=self.test_email_alerts_handler
+                    ._email_channel_routing_key,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)

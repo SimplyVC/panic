@@ -81,9 +81,8 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_opsgenie_alerts_handler.rabbitmq.queue_declare(
-                self.test_opsgenie_alerts_handler.
-                    _opsgenie_alerts_handler_queue,
-                False, True, False, False)
+                self.test_opsgenie_alerts_handler
+                    ._opsgenie_alerts_handler_queue, False, True, False, False)
             self.test_opsgenie_alerts_handler.rabbitmq.exchange_declare(
                 ALERT_EXCHANGE, 'topic', False, True, False, False)
             self.test_opsgenie_alerts_handler.rabbitmq.exchange_declare(
@@ -92,13 +91,13 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
             self.test_opsgenie_alerts_handler.rabbitmq.queue_purge(
                 self.test_rabbit_queue_name)
             self.test_opsgenie_alerts_handler.rabbitmq.queue_purge(
-                self.test_opsgenie_alerts_handler.
-                    _opsgenie_alerts_handler_queue)
+                self.test_opsgenie_alerts_handler
+                    ._opsgenie_alerts_handler_queue)
             self.test_opsgenie_alerts_handler.rabbitmq.queue_delete(
                 self.test_rabbit_queue_name)
             self.test_opsgenie_alerts_handler.rabbitmq.queue_delete(
-                self.test_opsgenie_alerts_handler.
-                    _opsgenie_alerts_handler_queue)
+                self.test_opsgenie_alerts_handler
+                    ._opsgenie_alerts_handler_queue)
             self.test_opsgenie_alerts_handler.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_opsgenie_alerts_handler.rabbitmq.exchange_delete(
@@ -170,8 +169,8 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
             # declared
             self.rabbitmq.connect()
             self.test_opsgenie_alerts_handler.rabbitmq.queue_delete(
-                self.test_opsgenie_alerts_handler.
-                    _opsgenie_alerts_handler_queue)
+                self.test_opsgenie_alerts_handler
+                    ._opsgenie_alerts_handler_queue)
             self.test_opsgenie_alerts_handler.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_opsgenie_alerts_handler.rabbitmq.exchange_delete(
@@ -211,17 +210,16 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
             # with the same routing key to any exchange at this point.
             self.test_opsgenie_alerts_handler.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
-                routing_key=self.test_opsgenie_alerts_handler.
-                    _opsgenie_channel_routing_key,
+                routing_key=self.test_opsgenie_alerts_handler
+                    ._opsgenie_channel_routing_key,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_opsgenie_alerts_handler.rabbitmq.queue_declare(
-                self.test_opsgenie_alerts_handler.
-                    _opsgenie_alerts_handler_queue,
-                False, True, False, False)
+                self.test_opsgenie_alerts_handler
+                    ._opsgenie_alerts_handler_queue, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))

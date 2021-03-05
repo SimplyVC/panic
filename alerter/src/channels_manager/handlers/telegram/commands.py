@@ -11,15 +11,15 @@ from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
 from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
-from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
-    TelegramCommandHandlers
+from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
+    TelegramCommandHandlers)
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants import HEALTH_CHECK_EXCHANGE
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
-_TCH_INPUT_ROUTING_KEY = 'ping'
+TCH_INPUT_ROUTING_KEY = 'ping'
 
 
 class TelegramCommandsHandler(ChannelHandler):
@@ -74,9 +74,9 @@ class TelegramCommandsHandler(ChannelHandler):
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._telegram_commands_handler_queue,
-                         HEALTH_CHECK_EXCHANGE, _TCH_INPUT_ROUTING_KEY)
+                         HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._telegram_commands_handler_queue,
-                                 HEALTH_CHECK_EXCHANGE, _TCH_INPUT_ROUTING_KEY)
+                                 HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
                           self._telegram_commands_handler_queue)
         self.rabbitmq.basic_consume(self._telegram_commands_handler_queue,
