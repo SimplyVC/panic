@@ -340,7 +340,7 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
     @mock.patch.object(OpsgenieAlertsHandler, "_send_alerts")
     @mock.patch.object(OpsgenieAlertsHandler, "_place_alert_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_alert_sends_data_waiting_in_queue_if_no_processing_errors(
+    def test_process_alert_sends_data_waiting_in_queue_if_processing_errors(
             self, mock_basic_ack, mock_place_alert, mock_send_alerts,
             mock_empty) -> None:
         # Setting it to non empty so that there is no attempt to send the
@@ -376,7 +376,7 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
     @mock.patch.object(OpsgenieAlertsHandler, "_send_alerts")
     @mock.patch.object(OpsgenieAlertsHandler, "_place_alert_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_alert_sends_data_waiting_in_queue_if_processing_errors(
+    def test_process_alert_sends_data_waiting_in_queue_if_no_processing_errors(
             self, mock_basic_ack, mock_place_alert, mock_send_alerts,
             mock_empty) -> None:
         # Setting it to non empty so that there is no attempt to send the
@@ -483,49 +483,6 @@ class TestOpsgenieAlertsHandler(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
         mock_basic_ack.assert_called_once()
-
-    @mock.patch.object(Queue, "empty")
-    @mock.patch.object(OpsgenieAlertsHandler, "_send_heartbeat")
-    @mock.patch.object(OpsgenieAlertsHandler, "_send_alerts")
-    @mock.patch.object(OpsgenieAlertsHandler, "_place_alert_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_alert_does_not_send_hb_if_not_all_data_sent_from_queue(
-            self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-            mock_send_heartbeat, mock_empty) -> None:
-        mock_empty.return_value = False
-        mock_place_alert.return_value = None
-        mock_basic_ack.return_value = None
-        mock_send_alerts.return_value = None
-        mock_send_heartbeat.return_value = None
-        try:
-            self.test_opsgenie_alerts_handler._initialise_rabbitmq()
-            blocking_channel = \
-                self.test_opsgenie_alerts_handler.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.test_opsgenie_alerts_handler
-                    ._opsgenie_channel_routing_key)
-            body = json.dumps(self.test_alert.alert_data)
-            properties = pika.spec.BasicProperties()
-
-            # First test with a valid alert
-            self.test_opsgenie_alerts_handler._process_alert(blocking_channel,
-                                                             method, properties,
-                                                             body)
-
-            # Test with an invalid alert dict
-            invalid_alert = copy.deepcopy(self.test_alert.alert_data)
-            del invalid_alert['message']
-            body = json.dumps(invalid_alert)
-            self.test_opsgenie_alerts_handler._process_alert(blocking_channel,
-                                                             method, properties,
-                                                             body)
-
-            mock_send_heartbeat.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-        args, _ = mock_basic_ack.call_args
-        self.assertEqual(2, len(args))
 
     @mock.patch.object(Queue, "empty")
     @mock.patch.object(OpsgenieAlertsHandler, "_send_heartbeat")
