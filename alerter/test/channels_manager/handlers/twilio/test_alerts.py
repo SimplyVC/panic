@@ -1,10 +1,16 @@
+import copy
 import json
 import logging
 import unittest
-from datetime import timedelta
+from datetime import timedelta, datetime
 from unittest import mock
+from unittest.mock import call
 
 import pika
+from freezegun import freeze_time
+from parameterized import parameterized
+from pika import BlockingConnection
+from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
@@ -14,6 +20,8 @@ from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, ALERT_EXCHANGE
+from src.utils.data import RequestStatus
+from src.utils.exceptions import MessageWasNotDeliveredException
 
 
 class TestTwilioAlertsHandler(unittest.TestCase):
@@ -253,632 +261,360 @@ class TestTwilioAlertsHandler(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    # TODO: Careful not all previous tests make sense for twilio. We have a
-    #     : mixture of telegram (with queue) like tests and console like tests
-    #     : (without queue)
-    #
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_places_data_on_queue_if_no_processing_errors(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_empty) -> None:
-    #     # Setting it to non empty so that there is no attempt to send the
-    #     # heartbeat
-    #     mock_empty.return_value = False
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         args, _ = mock_place_alert.call_args
-    #         self.assertEqual(self.test_alert.alert_data, args[0].alert_data)
-    #         self.assertEqual(1, len(args))
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_calls_using_twilio_if_no_processing_errors(
+            self, mock_basic_ack, mock_call_using_twilio) -> None:
+        # Setting it to failed so that there is no attempt to send the heartbeat
+        mock_call_using_twilio.return_value = RequestStatus.FAILED
+        mock_basic_ack.return_value = None
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            body = json.dumps(self.test_alert.alert_data)
+            properties = pika.spec.BasicProperties()
 
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_does_not_place_data_on_queue_if_processing_errors(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_empty) -> None:
-    #     # Setting it to non empty so that there is no attempt to send the
-    #     # heartbeat
-    #     mock_empty.return_value = False
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         data_to_send = copy.deepcopy(self.test_alert.alert_data)
-    #         del data_to_send['message']
-    #         body = json.dumps(data_to_send)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         mock_place_alert.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_sends_data_waiting_in_queue_if_processing_errors(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_empty) -> None:
-    #     # Setting it to non empty so that there is no attempt to send the
-    #     # heartbeat
-    #     mock_empty.return_value = False
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         data_to_send = copy.deepcopy(self.test_alert.alert_data)
-    #         del data_to_send['message']
-    #         body = json.dumps(data_to_send)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         mock_send_alerts.assert_called_once_with()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_sends_data_waiting_in_queue_if_no_processing_errors(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_empty) -> None:
-    #     # Setting it to non empty so that there is no attempt to send the
-    #     # heartbeat
-    #     mock_empty.return_value = False
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         mock_send_alerts.assert_called_once_with()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @parameterized.expand([
-    #     (AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (AMQPChannelError, AMQPChannelError('test'),),
-    #     (Exception, Exception('test'),),
-    #     (PANICException, PANICException('test', 4000)),
-    # ])
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_raises_exception_if_sending_data_from_queue_error(
-    #         self, error_class, error_instance, mock_basic_ack, mock_place_alert,
-    #         mock_send_alerts, mock_empty) -> None:
-    #     # Setting it to non empty so that there is no attempt to send the
-    #     # heartbeat
-    #     mock_empty.return_value = False
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.side_effect = error_instance
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.assertRaises(error_class,
-    #                           self.test_telegram_alerts_handler._process_alert,
-    #                           blocking_channel, method, properties, body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_heartbeat")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_sends_hb_if_data_sent_and_no_processing_errors(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_send_heartbeat, mock_empty) -> None:
-    #     # Setting it to non empty so that there is no attempt to send the
-    #     # heartbeat
-    #     mock_empty.return_value = True
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     mock_send_heartbeat.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         expected_heartbeat = {
-    #             'component_name': self.test_handler_name,
-    #             'is_alive': True,
-    #             'timestamp': datetime.now().timestamp()
-    #         }
-    #         mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_heartbeat")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_does_not_send_hb_if_not_all_data_sent_from_queue(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_send_heartbeat, mock_empty) -> None:
-    #     mock_empty.return_value = False
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     mock_send_heartbeat.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # First test with a valid alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         # Test with an invalid alert dict
-    #         invalid_alert = copy.deepcopy(self.test_alert.alert_data)
-    #         del invalid_alert['message']
-    #         body = json.dumps(invalid_alert)
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         mock_send_heartbeat.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     args, _ = mock_basic_ack.call_args
-    #     self.assertEqual(2, len(args))
-    #
-    # @parameterized.expand([(True,), (False,), ])
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_heartbeat")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_does_not_send_hb_if_processing_error(
-    #         self, is_queue_empty, mock_basic_ack, mock_place_alert,
-    #         mock_send_alerts, mock_send_heartbeat, mock_empty) -> None:
-    #     mock_empty.return_value = is_queue_empty
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     mock_send_heartbeat.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         invalid_alert = copy.deepcopy(self.test_alert.alert_data)
-    #         del invalid_alert['message']
-    #         body = json.dumps(invalid_alert)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send alert
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #
-    #         mock_send_heartbeat.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @parameterized.expand([
-    #     (True, AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (True, AMQPChannelError, AMQPChannelError('test'),),
-    #     (True, Exception, Exception('test'),),
-    #     (True, PANICException, PANICException('test', 4000)),
-    #     (False, AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (False, AMQPChannelError, AMQPChannelError('test'),),
-    #     (False, Exception, Exception('test'),),
-    #     (False, PANICException, PANICException('test', 4000)),
-    # ])
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_heartbeat")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_does_not_send_hb_if_error_raised_when_sending_data(
-    #         self, is_queue_empty, error_class, error_instance, mock_basic_ack,
-    #         mock_place_alert, mock_send_alerts, mock_send_heartbeat,
-    #         mock_empty) -> None:
-    #     mock_empty.return_value = is_queue_empty
-    #     mock_place_alert.return_value = None
-    #     mock_basic_ack.return_value = None
-    #     mock_send_alerts.side_effect = error_instance
-    #     mock_send_heartbeat.return_value = None
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send with a valid alert
-    #         self.assertRaises(error_class,
-    #                           self.test_telegram_alerts_handler._process_alert,
-    #                           blocking_channel, method, properties, body)
-    #
-    #         # Test with an invalid alert
-    #         invalid_alert = copy.deepcopy(self.test_alert.alert_data)
-    #         del invalid_alert['message']
-    #         body = json.dumps(invalid_alert)
-    #         self.assertRaises(error_class,
-    #                           self.test_telegram_alerts_handler._process_alert,
-    #                           blocking_channel, method, properties, body)
-    #
-    #         mock_send_heartbeat.assert_not_called()
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     args, _ = mock_basic_ack.call_args
-    #     self.assertEqual(2, len(args))
-    #
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_heartbeat")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_does_not_raise_msg_not_delivered_exception(
-    #         self, mock_basic_ack, mock_place_alert, mock_send_alerts,
-    #         mock_send_heartbeat, mock_empty) -> None:
-    #     mock_basic_ack.return_value = None
-    #     mock_place_alert.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     mock_empty.return_value = True
-    #     mock_send_heartbeat.side_effect = MessageWasNotDeliveredException(
-    #         'test')
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # This would raise a MessageWasNotDeliveredException if raised,
-    #         # hence the test would fail
-    #         self.test_telegram_alerts_handler._process_alert(blocking_channel,
-    #                                                          method, properties,
-    #                                                          body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # @parameterized.expand([
-    #     (AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (AMQPChannelError, AMQPChannelError('test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_heartbeat")
-    # @mock.patch.object(TelegramAlertsHandler, "_send_alerts")
-    # @mock.patch.object(TelegramAlertsHandler, "_place_alert_on_queue")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_alert_raises_error_if_raised_by_send_hb(
-    #         self, exception_class, exception_instance, mock_basic_ack,
-    #         mock_place_alert, mock_send_alerts, mock_send_heartbeat,
-    #         mock_empty) -> None:
-    #     # For this test we will check for channel, connection and unexpected
-    #     # errors.
-    #     mock_basic_ack.return_value = None
-    #     mock_place_alert.return_value = None
-    #     mock_send_alerts.return_value = None
-    #     mock_send_heartbeat.side_effect = exception_instance
-    #     mock_empty.return_value = True
-    #     try:
-    #         self.test_telegram_alerts_handler._initialise_rabbitmq()
-    #         blocking_channel = \
-    #             self.test_telegram_alerts_handler.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=self.test_telegram_alerts_handler
-    #                 ._telegram_channel_routing_key)
-    #         body = json.dumps(self.test_alert.alert_data)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         self.assertRaises(exception_class,
-    #                           self.test_telegram_alerts_handler._process_alert,
-    #                           blocking_channel, method, properties, body)
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     mock_basic_ack.assert_called_once()
-    #
-    # def test_place_alert_on_queue_places_alert_on_queue_if_queue_not_full(
-    #         self) -> None:
-    #     # Use a smaller queue in this case for simplicity
-    #     test_queue = Queue(3)
-    #     self.test_telegram_alerts_handler._alerts_queue = test_queue
-    #     test_queue.put('item1')
-    #     test_queue.put('item2')
-    #
-    #     self.test_telegram_alerts_handler._place_alert_on_queue(
-    #         self.test_alert)
-    #
-    #     all_queue_items = list(test_queue.queue)
-    #     self.assertEqual(['item1', 'item2', self.test_alert], all_queue_items)
-    #
-    # def test_place_alert_on_queue_removes_oldest_and_places_if_queue_full(
-    #         self) -> None:
-    #     # Use a smaller queue in this case for simplicity
-    #     test_queue = Queue(3)
-    #     self.test_telegram_alerts_handler._alerts_queue = test_queue
-    #     test_queue.put('item1')
-    #     test_queue.put('item2')
-    #     test_queue.put('item3')
-    #
-    #     self.test_telegram_alerts_handler._place_alert_on_queue(
-    #         self.test_alert)
-    #
-    #     all_queue_items = list(test_queue.queue)
-    #     self.assertEqual(['item2', 'item3', self.test_alert], all_queue_items)
-    #
-    # @mock.patch.object(Queue, "empty")
-    # @mock.patch.object(Queue, "get")
-    # @mock.patch.object(logging, "debug")
-    # @mock.patch.object(logging, "info")
-    # @mock.patch.object(logging, "warning")
-    # @mock.patch.object(logging, "critical")
-    # @mock.patch.object(logging, "error")
-    # @mock.patch.object(logging, "exception")
-    # def test_send_alerts_does_nothing_if_queue_is_empty(
-    #         self, mock_exception, mock_error, mock_critical, mock_warning,
-    #         mock_info, mock_debug, mock_get, mock_empty) -> None:
-    #     mock_empty.return_value = True
-    #
-    #     self.test_telegram_alerts_handler._send_alerts()
-    #
-    #     mock_critical.assert_not_called()
-    #     mock_info.assert_not_called()
-    #     mock_warning.assert_not_called()
-    #     mock_debug.assert_not_called()
-    #     mock_get.assert_not_called()
-    #     mock_exception.assert_not_called()
-    #     mock_error.assert_not_called()
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(TelegramChannel, "alert")
-    # def test_send_alerts_discards_old_alerts_and_sends_the_recent(
-    #         self, mock_alert) -> None:
-    #     mock_alert.return_value = RequestStatus.SUCCESS
-    #     test_alert_old1 = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity,
-    #         datetime.now().timestamp() - self.test_alert_validity_threshold - 1,
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_alert_recent1 = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity,
-    #         datetime.now().timestamp() - self.test_alert_validity_threshold,
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_alert_recent2 = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity, datetime.now().timestamp(),
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_alert_recent3 = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity,
-    #         datetime.now().timestamp() - self.test_alert_validity_threshold + 4,
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_queue = Queue(4)
-    #     self.test_telegram_alerts_handler._alerts_queue = test_queue
-    #     test_queue.put(test_alert_old1)
-    #     test_queue.put(test_alert_recent1)
-    #     test_queue.put(test_alert_recent2)
-    #     test_queue.put(test_alert_recent3)
-    #
-    #     self.test_telegram_alerts_handler._send_alerts()
-    #
-    #     self.assertTrue(self.test_telegram_alerts_handler.alerts_queue.empty())
-    #     expected_calls = [call(test_alert_recent1), call(test_alert_recent2),
-    #                       call(test_alert_recent3)]
-    #     actual_calls = mock_alert.call_args_list
-    #     self.assertEqual(expected_calls, actual_calls)
-    #
-    # @parameterized.expand([
-    #     ([RequestStatus.SUCCESS], 1,),
-    #     ([RequestStatus.FAILED, RequestStatus.SUCCESS], 2,),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.SUCCESS],
-    #      3,),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
-    #       RequestStatus.SUCCESS], 4,),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
-    #       RequestStatus.FAILED, RequestStatus.SUCCESS], 5,),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
-    #       RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.SUCCESS],
-    #      5,),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(RabbitMQApi, "connection")
-    # @mock.patch.object(TelegramChannel, "alert")
-    # def test_send_alerts_attempts_to_send_alert_for_up_to_max_attempts_times(
-    #         self, alert_request_status_list, expected_no_calls, mock_alert,
-    #         mock_connection) -> None:
-    #     mock_alert.side_effect = alert_request_status_list
-    #     mock_connection.return_value.sleep.return_value = None
-    #     test_alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity, datetime.now().timestamp(),
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_queue = Queue(4)
-    #     self.test_telegram_alerts_handler._alerts_queue = test_queue
-    #     test_queue.put(test_alert)
-    #
-    #     self.test_telegram_alerts_handler._send_alerts()
-    #
-    #     expected_calls = []
-    #     for _ in range(expected_no_calls):
-    #         expected_calls.append(call(test_alert))
-    #     actual_calls = mock_alert.call_args_list
-    #     self.assertEqual(expected_calls, actual_calls)
-    #
-    # @parameterized.expand([
-    #     ([RequestStatus.SUCCESS],),
-    #     ([RequestStatus.FAILED, RequestStatus.SUCCESS],),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.SUCCESS],),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
-    #       RequestStatus.SUCCESS],),
-    #     ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
-    #       RequestStatus.FAILED, RequestStatus.SUCCESS],),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(RabbitMQApi, "connection")
-    # @mock.patch.object(TelegramChannel, "alert")
-    # def test_send_alerts_removes_alert_if_it_was_successfully_sent(
-    #         self, alert_request_status_list, mock_alert,
-    #         mock_connection) -> None:
-    #     mock_alert.side_effect = alert_request_status_list
-    #     mock_connection.return_value.sleep.return_value = None
-    #     test_alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity, datetime.now().timestamp(),
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_queue = Queue(4)
-    #     self.test_telegram_alerts_handler._alerts_queue = test_queue
-    #     test_queue.put(test_alert)
-    #
-    #     self.test_telegram_alerts_handler._send_alerts()
-    #
-    #     self.assertTrue(self.test_telegram_alerts_handler.alerts_queue.empty())
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(RabbitMQApi, "connection")
-    # @mock.patch.object(TelegramChannel, "alert")
-    # def test_send_alerts_stops_sending_if_an_alert_is_not_successfully_sent(
-    #         self, mock_alert, mock_connection) -> None:
-    #     mock_alert.return_value = RequestStatus.FAILED
-    #     mock_connection.return_value.sleep.return_value = None
-    #     test_alert_1 = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity, datetime.now().timestamp(),
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_alert_2 = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-    #         self.test_system_name, self.test_percentage_usage,
-    #         self.test_panic_severity, datetime.now().timestamp() + 1,
-    #         self.test_panic_severity, self.test_parent_id, self.test_system_id
-    #     )
-    #     test_queue = Queue(4)
-    #     self.test_telegram_alerts_handler._alerts_queue = test_queue
-    #     test_queue.put(test_alert_1)
-    #     test_queue.put(test_alert_2)
-    #
-    #     self.test_telegram_alerts_handler._send_alerts()
-    #
-    #     self.assertFalse(
-    #         self.test_telegram_alerts_handler.alerts_queue.empty())
-    #     self.assertEqual(
-    #         2, self.test_telegram_alerts_handler.alerts_queue.qsize())
-    #     self.assertEqual(
-    #         test_alert_1,
-    #         self.test_telegram_alerts_handler.alerts_queue.queue[0])
-    #     self.assertEqual(
-    #         test_alert_2,
-    #         self.test_telegram_alerts_handler.alerts_queue.queue[1])
+            # Send alert
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+
+            args, _ = mock_call_using_twilio.call_args
+            self.assertEqual(self.test_alert.alert_data, args[0].alert_data)
+            self.assertEqual(1, len(args))
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_does_not_call_using_twilio_if_processing_errors(
+            self, mock_basic_ack, mock_call_using_twilio) -> None:
+        # Setting it to failed so that there is no attempt to send the heartbeat
+        mock_call_using_twilio.return_value = RequestStatus.FAILED
+        mock_basic_ack.return_value = None
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            data_to_send = copy.deepcopy(self.test_alert.alert_data)
+            del data_to_send['message']
+            body = json.dumps(data_to_send)
+            properties = pika.spec.BasicProperties()
+
+            # Send alert
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+
+            mock_call_using_twilio.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(TwilioAlertsHandler, "_send_heartbeat")
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_sends_hb_if_no_processing_error_and_call_successful(
+            self, mock_basic_ack, mock_call_using_twilio, mock_send_hb) -> None:
+        # Setting it to failed so that there is no attempt to send the heartbeat
+        mock_call_using_twilio.return_value = RequestStatus.SUCCESS
+        mock_basic_ack.return_value = None
+        mock_send_hb.return_value = None
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            body = json.dumps(self.test_alert.alert_data)
+            properties = pika.spec.BasicProperties()
+
+            # Send alert
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+
+            expected_heartbeat = {
+                'component_name': self.test_handler_name,
+                'is_alive': True,
+                'timestamp': datetime.now().timestamp()
+            }
+            mock_send_hb.assert_called_once_with(expected_heartbeat)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @parameterized.expand([(RequestStatus.SUCCESS,), (RequestStatus.FAILED,), ])
+    @mock.patch.object(TwilioAlertsHandler, "_send_heartbeat")
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_does_not_send_heartbeat_if_processing_error(
+            self, call_request_status, mock_basic_ack, mock_call_using_twilio,
+            mock_send_hb) -> None:
+        # Setting it to failed so that there is no attempt to send the heartbeat
+        mock_call_using_twilio.return_value = call_request_status
+        mock_basic_ack.return_value = None
+        mock_send_hb.return_value = None
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            data_to_send = copy.deepcopy(self.test_alert.alert_data)
+            del data_to_send['message']
+            body = json.dumps(data_to_send)
+            properties = pika.spec.BasicProperties()
+
+            # Send alert
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+
+            mock_send_hb.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(TwilioAlertsHandler, "_send_heartbeat")
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_does_not_send_heartbeat_if_call_request_fails(
+            self, mock_basic_ack, mock_call_using_twilio, mock_send_hb) -> None:
+        # Setting it to failed so that there is no attempt to send the heartbeat
+        mock_call_using_twilio.return_value = RequestStatus.FAILED
+        mock_basic_ack.return_value = None
+        mock_send_hb.return_value = None
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            body = json.dumps(self.test_alert.alert_data)
+            properties = pika.spec.BasicProperties()
+
+            # First test with valid alert json
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+
+            # Test with invalid alert json
+            data_to_send = copy.deepcopy(self.test_alert.alert_data)
+            del data_to_send['message']
+            body = json.dumps(data_to_send)
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+
+            mock_send_hb.assert_not_called()
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        args, _ = mock_basic_ack.call_args
+        self.assertEqual(2, len(args))
+
+    @mock.patch.object(TwilioAlertsHandler, "_send_heartbeat")
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_does_not_raise_msg_not_delivered_exception(
+            self, mock_basic_ack, mock_call_using_twilio, mock_send_hb) -> None:
+        mock_basic_ack.return_value = None
+        mock_call_using_twilio.retrurn_value = RequestStatus.SUCCESS
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            body = json.dumps(self.test_alert.alert_data)
+            properties = pika.spec.BasicProperties()
+
+            # This would raise a MessageWasNotDeliveredException if raised,
+            # hence the test would fail
+            self.test_twilio_alerts_handler._process_alert(blocking_channel,
+                                                           method, properties,
+                                                           body)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @parameterized.expand([
+        (AMQPConnectionError, AMQPConnectionError('test'),),
+        (AMQPChannelError, AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(TwilioAlertsHandler, "_send_heartbeat")
+    @mock.patch.object(TwilioAlertsHandler, "_call_using_twilio")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_alert_raises_error_if_raised_by_send_hb(
+            self, exception_class, exception_instance, mock_basic_ack,
+            mock_call_using_twilio, mock_send_hb) -> None:
+        # For this test we will check for channel, connection and unexpected
+        # errors.
+        mock_basic_ack.return_value = None
+        mock_call_using_twilio.return_value = RequestStatus.SUCCESS
+        mock_send_hb.side_effect = exception_instance
+        try:
+            self.test_twilio_alerts_handler._initialise_rabbitmq()
+            blocking_channel = self.test_twilio_alerts_handler.rabbitmq.channel
+            method = pika.spec.Basic.Deliver(
+                routing_key=
+                self.test_twilio_alerts_handler._twilio_channel_routing_key)
+            body = json.dumps(self.test_alert.alert_data)
+            properties = pika.spec.BasicProperties()
+
+            self.assertRaises(exception_class,
+                              self.test_twilio_alerts_handler._process_alert,
+                              blocking_channel, method, properties, body)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @parameterized.expand([(1,), (20,), ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(BlockingConnection, "sleep")
+    @mock.patch.object(TwilioChannel, "alert")
+    def test_call_using_twilio_does_not_call_if_validity_threshold_exceeded(
+            self, exceeding_factor, mock_alert, mock_sleep) -> None:
+        mock_alert.return_value = None
+        mock_sleep.return_value = None
+        test_alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
+            self.test_system_name, self.test_percentage_usage,
+            self.test_panic_severity,
+            datetime.now().timestamp() - self.test_alert_validity_threshold
+            - exceeding_factor,
+            self.test_panic_severity, self.test_parent_id, self.test_system_id
+        )
+
+        ret = self.test_twilio_alerts_handler._call_using_twilio(test_alert)
+        self.assertEqual(RequestStatus.FAILED, ret)
+        mock_alert.assert_not_called()
+
+    @parameterized.expand([(0,), (1,), (20,), ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(BlockingConnection, "sleep")
+    @mock.patch.object(TwilioChannel, "alert")
+    def test_call_using_twilio_calls_all_if_validity_threshold_not_exceeded(
+            self, exceeding_factor, mock_alert, mock_sleep) -> None:
+        mock_alert.return_value = RequestStatus.SUCCESS
+        mock_sleep.return_value = None
+        test_alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
+            self.test_system_name, self.test_percentage_usage,
+            self.test_panic_severity,
+            datetime.now().timestamp() - self.test_alert_validity_threshold
+            + exceeding_factor,
+            self.test_panic_severity, self.test_parent_id, self.test_system_id
+        )
+
+        ret = self.test_twilio_alerts_handler._call_using_twilio(test_alert)
+        self.assertEqual(RequestStatus.SUCCESS, ret)
+        expected_calls = [
+            call(call_from=self.test_call_from, call_to=self.test_call_to[0],
+                 twiml=self.test_twiml, twiml_is_url=self.test_twiml_is_url),
+            call(call_from=self.test_call_from, call_to=self.test_call_to[1],
+                 twiml=self.test_twiml, twiml_is_url=self.test_twiml_is_url),
+            call(call_from=self.test_call_from, call_to=self.test_call_to[2],
+                 twiml=self.test_twiml, twiml_is_url=self.test_twiml_is_url)
+        ]
+        actual_calls = mock_alert.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @parameterized.expand([
+        ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.SUCCESS, RequestStatus.SUCCESS], [0], [3, 0, 0],
+         RequestStatus.FAILED),
+        ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.SUCCESS], [0, 1], [3, 3, 0], RequestStatus.FAILED),
+        ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED],
+         [0, 1, 2], [3, 3, 3], RequestStatus.FAILED),
+        ([RequestStatus.SUCCESS, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.SUCCESS], [1], [0, 3, 0],
+         RequestStatus.FAILED),
+        ([RequestStatus.SUCCESS, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, ], [1, 2], [0, 3, 3], RequestStatus.FAILED),
+        ([RequestStatus.SUCCESS, RequestStatus.SUCCESS, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED], [2], [0, 0, 3],
+         RequestStatus.FAILED),
+        ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.SUCCESS, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, ], [0, 2], [3, 0, 3], RequestStatus.FAILED),
+        ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.FAILED],
+         [0, 1, 2], [3, 3, 3], RequestStatus.FAILED),
+        ([RequestStatus.FAILED, RequestStatus.SUCCESS, RequestStatus.SUCCESS,
+          RequestStatus.SUCCESS], [0], [2, 0, 0], RequestStatus.SUCCESS),
+        ([RequestStatus.FAILED, RequestStatus.FAILED, RequestStatus.SUCCESS,
+          RequestStatus.SUCCESS, RequestStatus.SUCCESS], [0], [3, 0, 0],
+         RequestStatus.SUCCESS),
+        ([RequestStatus.SUCCESS, RequestStatus.FAILED, RequestStatus.SUCCESS,
+          RequestStatus.SUCCESS], [1], [0, 2, 0], RequestStatus.SUCCESS),
+        ([RequestStatus.SUCCESS, RequestStatus.FAILED, RequestStatus.FAILED,
+          RequestStatus.SUCCESS, RequestStatus.SUCCESS], [1], [0, 3, 0],
+         RequestStatus.SUCCESS),
+        ([RequestStatus.SUCCESS, RequestStatus.SUCCESS, RequestStatus.FAILED,
+          RequestStatus.SUCCESS], [2], [0, 0, 2], RequestStatus.SUCCESS),
+        ([RequestStatus.SUCCESS, RequestStatus.SUCCESS, RequestStatus.FAILED,
+          RequestStatus.FAILED, RequestStatus.SUCCESS], [2], [0, 0, 3],
+         RequestStatus.SUCCESS),
+    ])
+    @mock.patch.object(RabbitMQApi, "connection")
+    @mock.patch.object(TwilioChannel, "alert")
+    def test_call_using_twilio_attempts_calling_max_attempts_times_for_everyone(
+            self, alert_request_status, failed_callee_index, amount_of_calls,
+            expected_ret, mock_alert, mock_connection) -> None:
+        # Here we will assume that the self._alert_validity_threshold is not
+        # exceeded
+        mock_alert.side_effect = alert_request_status
+        mock_connection.return_value.sleep.return_value = None
+        successful_callee_index = [
+            i
+            for i in range(len(self.test_call_to))
+            if i not in failed_callee_index
+        ]
+        expected_calls = []
+        test_alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
+            self.test_system_name, self.test_percentage_usage,
+            self.test_panic_severity, datetime.now().timestamp(),
+            self.test_panic_severity, self.test_parent_id, self.test_system_id
+        )
+        for index in range(len(self.test_call_to)):
+            if index in failed_callee_index:
+                for _ in range(amount_of_calls[index]):
+                    expected_calls.append(
+                        call(call_from=self.test_call_from,
+                             call_to=self.test_call_to[index],
+                             twiml=self.test_twiml,
+                             twiml_is_url=self.test_twiml_is_url)
+                    )
+            elif index in successful_callee_index:
+                expected_calls.append(
+                    call(call_from=self.test_call_from,
+                         call_to=self.test_call_to[index],
+                         twiml=self.test_twiml,
+                         twiml_is_url=self.test_twiml_is_url)
+                )
+
+        ret = self.test_twilio_alerts_handler._call_using_twilio(test_alert)
+        self.assertEqual(expected_ret, ret)
+        actual_calls = mock_alert.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
