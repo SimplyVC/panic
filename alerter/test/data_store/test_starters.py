@@ -2,23 +2,17 @@ import logging
 import unittest
 from datetime import timedelta
 from unittest import mock
-import copy
-
-from src.message_broker.rabbitmq import RabbitMQApi
-
-from src.data_store.stores.alert import AlertStore
-from src.data_store.stores.github import GithubStore
-from src.data_store.stores.system import SystemStore
-from src.data_store.stores.store import Store
 
 from src.data_store.starters import (
     _initialise_store_logger, _initialise_store, start_system_store,
     start_github_store, start_alert_store)
-
+from src.data_store.stores.alert import AlertStore
+from src.data_store.stores.github import GithubStore
+from src.data_store.stores.system import SystemStore
+from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils.constants import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
                                  ALERT_STORE_NAME)
-
-from src.utils import env
 
 
 class TestAlertersStarters(unittest.TestCase):
