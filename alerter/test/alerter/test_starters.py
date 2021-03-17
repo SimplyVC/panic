@@ -115,9 +115,10 @@ class TestAlertersStarters(unittest.TestCase):
             SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name),
             self.alerter_name)
 
-        mock_create_logger.called_once_with(
-            env.ALERTERS_LOG_FILE_TEMPLATE.format(self.alerter_name),
-            self.alerter_name, env.LOGGING_LEVEL, True
+        mock_create_logger.assert_called_once_with(
+            env.ALERTERS_LOG_FILE_TEMPLATE.format(
+                SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name)),
+            self.alerter_name, env.LOGGING_LEVEL, rotating=True
         )
 
     @mock.patch("src.alerter.alerter_starters.create_logger")
@@ -138,8 +139,9 @@ class TestAlertersStarters(unittest.TestCase):
 
         _initialise_github_alerter()
 
-        mock_init_logger.called_once_with(
-            self.github_alerter_name
+        mock_init_logger.assert_called_once_with(
+            self.github_alerter_name,
+            GithubAlerter.__name__
         )
 
     @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
@@ -150,8 +152,9 @@ class TestAlertersStarters(unittest.TestCase):
         _initialise_system_alerter(self.system_alerts_config,
                                    self.parent_id)
 
-        mock_init_logger.called_once_with(
-            env.ALERTERS_LOG_FILE_TEMPLATE.format(self.parent_id),
+        mock_init_logger.assert_called_once_with(
+            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.parent_id),
+            SystemAlerter.__name__
         )
 
     @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
@@ -162,9 +165,12 @@ class TestAlertersStarters(unittest.TestCase):
         mock_github_alerter.__name__ = 'github_alerter_name'
 
         _initialise_github_alerter()
-        mock_github_alerter.called_once_with(
-            self.github_alerter_name, self.dummy_logger
-        )
+
+        args, _ = mock_github_alerter.call_args
+        self.assertEqual(self.github_alerter_name, args[0])
+        self.assertEqual(self.dummy_logger, args[1])
+        self.assertEqual(type(self.rabbitmq), type(args[2]))
+        self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[3])
 
     @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
     @mock.patch('src.alerter.alerter_starters.SystemAlerter')
@@ -176,10 +182,13 @@ class TestAlertersStarters(unittest.TestCase):
         _initialise_system_alerter(self.system_alerts_config,
                                    self.parent_id)
 
-        mock_system_alerter.called_once_with(
-            env.ALERTERS_LOG_FILE_TEMPLATE.format(self.parent_id),
-            self.system_alerts_config, self.dummy_logger
-        )
+        args, _ = mock_system_alerter.call_args
+        self.assertEqual(SYSTEM_ALERTER_NAME_TEMPLATE.format(self.parent_id),
+                         args[0])
+        self.assertEqual(self.system_alerts_config, args[1])
+        self.assertEqual(self.dummy_logger, args[2])
+        self.assertEqual(type(self.rabbitmq), type(args[3]))
+        self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[4])
 
     @mock.patch("src.alerter.alerter_starters._initialise_system_alerter")
     @mock.patch('src.alerter.alerter_starters.start_alerter')
@@ -191,10 +200,10 @@ class TestAlertersStarters(unittest.TestCase):
         start_system_alerter(self.system_alerts_config,
                              self.parent_id)
 
-        mock_start_alerter.called_once_with(
+        mock_start_alerter.assert_called_once_with(
             self.test_system_alerter
         )
-        mock_initialise_alerter(
+        mock_initialise_alerter.assert_called_once_with(
             self.system_alerts_config, self.parent_id
         )
 
@@ -207,7 +216,7 @@ class TestAlertersStarters(unittest.TestCase):
 
         start_github_alerter()
 
-        mock_start_alerter.called_once_with(
+        mock_start_alerter.assert_called_once_with(
             self.test_github_alerter
         )
-        mock_initialise_alerter.called_once()
+        mock_initialise_alerter.assert_called_once()
