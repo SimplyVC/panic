@@ -316,6 +316,8 @@ class TestConfigStore(unittest.TestCase):
         delete_queue_if_exists(self.test_rabbit_manager, self.test_queue_name)
         disconnect_from_rabbit(self.test_rabbit_manager)
 
+        self.redis.delete_all_unsafe()
+        self.redis = None
         self.dummy_logger = None
         self.connection_check_time_interval = None
         self.rabbitmq = None
@@ -360,6 +362,14 @@ class TestConfigStore(unittest.TestCase):
             self.assertTrue(
                 self.test_store.rabbitmq.channel._delivery_confirmation)
 
+            # Check whether the producing exchanges have been created by
+            # using passive=True. If this check fails an exception is raised
+            # automatically.
+            self.test_store.rabbitmq.exchange_declare(
+                CONFIG_EXCHANGE, passive=True)
+            self.test_store.rabbitmq.exchange_declare(
+                HEALTH_CHECK_EXCHANGE, passive=True)
+
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
@@ -375,92 +385,22 @@ class TestConfigStore(unittest.TestCase):
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
+
+            # Re-declare queue to get the number of messages
+            res = self.test_store.rabbitmq.queue_declare(
+                STORE_CONFIGS_QUEUE_NAME, False, True, False, False)
+
+            self.assertEqual(1, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
-    @parameterized.expand([
-        ("self.nodes_config_1", "self.routing_key_1"),
-        ("self.alerts_config_1", "self.routing_key_2"),
-        ("self.repos_config_1", "self.routing_key_3"),
-        ("self.repos_config_1", "self.routing_key_4"),
-        ("self.alerts_config_1", "self.routing_key_5"),
-        ("self.systems_config_1", "self.routing_key_6"),
-        ("self.email_config_1", "self.routing_key_7"),
-        ("self.pagerduty_config_1", "self.routing_key_8"),
-        ("self.opsgenie_config_1", "self.routing_key_9"),
-        ("self.telegram_config_1", "self.routing_key_10"),
-        ("self.twilio_config_1", "self.routing_key_11"),
-    ])
-    @mock.patch.object(RedisApi, "hset")
-    def test_process_data_sort_redis_is_called_correctly(
-            self, mock_config_data, mock_routing_key,
-            mock_hset) -> None:
-
-        data = eval(mock_config_data)
-        routing_key = eval(mock_routing_key).split('.')
-        self.test_store._process_data_sort(routing_key, data)
-
-        if routing_key[0] in ['general', 'channels']:
-            if routing_key[1] in ['systems_config', 'alerts_config',
-                                  'repos_config', 'opsgenie_config',
-                                  'pagerduty_config', 'telegram_config',
-                                  'email_config', 'twilio_config']:
-                parent_id = routing_key[0]
-                config_type = routing_key[1]
-        elif 'chains' == routing_key[0]:
-            if routing_key[3] in ['nodes_config', 'alerts_config',
-                                  'repos_config']:
-                parent_id = routing_key[1] + '.' + routing_key[2]
-                config_type = routing_key[3]
-
-        call_1 = call(Keys.get_hash_parent(parent_id),
-                      Keys.get_config(config_type),
-                      json.dumps(data))
-
-        mock_hset.assert_has_calls([call_1])
-
-    def test_process_redis_store_does_nothing_on_error_key(self) -> None:
+    @mock.patch("src.data_store.stores.store.RedisApi.hset",
+                autospec=True)
+    def test_process_redis_store_does_nothing_on_error_key(self,
+                                                           mock_hset) -> None:
         self.test_store._process_redis_store(self.test_parent_id,
-                                             self.test_config_type,
                                              self.config_data_unexpected)
-
-    @parameterized.expand([
-        ("self.nodes_config_1", "self.routing_key_1"),
-        ("self.alerts_config_1", "self.routing_key_2"),
-        ("self.repos_config_1", "self.routing_key_3"),
-        ("self.repos_config_1", "self.routing_key_4"),
-        ("self.alerts_config_1", "self.routing_key_5"),
-        ("self.systems_config_1", "self.routing_key_6"),
-        ("self.email_config_1", "self.routing_key_7"),
-        ("self.pagerduty_config_1", "self.routing_key_8"),
-        ("self.opsgenie_config_1", "self.routing_key_9"),
-        ("self.telegram_config_1", "self.routing_key_10"),
-        ("self.twilio_config_1", "self.routing_key_11"),
-    ])
-    def test_process_data_sort_redis_stores_correctly(
-            self, mock_config_data, mock_routing_key) -> None:
-
-        data = eval(mock_config_data)
-        routing_key = eval(mock_routing_key).split('.')
-        self.test_store._process_data_sort(routing_key, data)
-
-        if routing_key[0] in ['general', 'channels']:
-            if routing_key[1] in ['systems_config', 'alerts_config',
-                                  'repos_config', 'opsgenie_config',
-                                  'pagerduty_config', 'telegram_config',
-                                  'email_config', 'twilio_config']:
-                parent_id = routing_key[0]
-                config_type = routing_key[1]
-        elif 'chains' == routing_key[0]:
-            if routing_key[3] in ['nodes_config', 'alerts_config',
-                                  'repos_config']:
-                parent_id = routing_key[1] + '.' + routing_key[2]
-                config_type = routing_key[3]
-
-        self.assertEqual(data, json.loads(
-            self.redis.hget(Keys.get_hash_parent(parent_id),
-                            Keys.get_config(config_type)).decode(
-                                "utf-8")))
+        mock_hset.assert_not_called()
 
     @parameterized.expand([
         ("self.nodes_config_1", "self.routing_key_1"),
@@ -483,12 +423,10 @@ class TestConfigStore(unittest.TestCase):
                                          mock_routing_key, mock_send_hb,
                                          mock_ack) -> None:
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             data = eval(mock_config_data)
-            routing_key = eval(mock_routing_key).split('.')
+            routing_key = eval(mock_routing_key)
 
             self.test_store._initialise_rabbitmq()
 
@@ -506,22 +444,8 @@ class TestConfigStore(unittest.TestCase):
             mock_ack.assert_called_once()
             mock_send_hb.assert_called_once()
 
-            if routing_key[0] in ['general', 'channels']:
-                if routing_key[1] in ['systems_config', 'alerts_config',
-                                      'repos_config', 'opsgenie_config',
-                                      'pagerduty_config', 'telegram_config',
-                                      'email_config', 'twilio_config']:
-                    parent_id = routing_key[0]
-                    config_type = routing_key[1]
-            elif 'chains' == routing_key[0]:
-                if routing_key[3] in ['nodes_config', 'alerts_config',
-                                      'repos_config']:
-                    parent_id = routing_key[1] + '.' + routing_key[2]
-                    config_type = routing_key[3]
-
             self.assertEqual(data, json.loads(
-                self.redis.hget(Keys.get_hash_parent(parent_id),
-                                Keys.get_config(config_type)).decode(
+                self.redis.get(Keys.get_config(routing_key)).decode(
                                     "utf-8")))
 
         except Exception as e:
@@ -606,7 +530,7 @@ class TestConfigStore(unittest.TestCase):
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key='0')
+                routing_key=None)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
@@ -623,13 +547,6 @@ class TestConfigStore(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
-
-    def test_process_data_sort_raises_exception_on_unexpected_routing_key(
-            self) -> None:
-        self.assertRaises(ReceivedUnexpectedDataException,
-                          self.test_store._process_data_sort,
-                          ['0', 'repos_config'],
-                          self.repos_config_1)
 
     @parameterized.expand([
         ("self.nodes_config_1", "self.routing_key_1"),
@@ -653,18 +570,16 @@ class TestConfigStore(unittest.TestCase):
             mock_ack) -> None:
 
         self.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, "topic", False, True,
-                                       False, False)
         mock_ack.return_value = None
         try:
             data = eval(mock_config_data)
-            routing_key = eval(mock_routing_key).split('.')
+            routing_key = eval(mock_routing_key)
 
             self.test_store._initialise_rabbitmq()
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=eval(mock_routing_key))
+                routing_key=routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
@@ -676,23 +591,8 @@ class TestConfigStore(unittest.TestCase):
             mock_ack.assert_called_once()
             mock_send_hb.assert_called_once()
 
-            if routing_key[0] in ['general', 'channels']:
-                if routing_key[1] in ['systems_config', 'alerts_config',
-                                      'repos_config', 'opsgenie_config',
-                                      'pagerduty_config', 'telegram_config',
-                                      'email_config', 'twilio_config']:
-                    parent_id = routing_key[0]
-                    config_type = routing_key[1]
-            elif 'chains' == routing_key[0]:
-                if routing_key[3] in ['nodes_config', 'alerts_config',
-                                      'repos_config']:
-                    parent_id = routing_key[1] + '.' + routing_key[2]
-                    config_type = routing_key[3]
-
             self.assertEqual(data, json.loads(
-                self.redis.hget(Keys.get_hash_parent(parent_id),
-                                Keys.get_config(config_type)).decode(
-                                    "utf-8")))
+                self.redis.get(Keys.get_config(routing_key)).decode("utf-8")))
 
             self.test_store._process_data(
                 blocking_channel,
@@ -702,7 +602,7 @@ class TestConfigStore(unittest.TestCase):
             )
 
             self.assertEqual(None,
-                             self.redis.hget(Keys.get_hash_parent(parent_id),
-                                             Keys.get_config(config_type)))
+                             self.redis.get(Keys.get_config(routing_key)))
+
         except Exception as e:
             self.fail("Test failed: {}".format(e))

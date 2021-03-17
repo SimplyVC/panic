@@ -203,7 +203,7 @@ class TestAlertersStarters(unittest.TestCase):
         mock_start_alerter.assert_called_once_with(
             self.test_system_alerter
         )
-        mock_initialise_alerter(
+        mock_initialise_alerter.assert_called_once_with(
             self.system_alerts_config, self.parent_id
         )
 
@@ -219,4 +219,4 @@ class TestAlertersStarters(unittest.TestCase):
         mock_start_alerter.assert_called_once_with(
             self.test_github_alerter
         )
-        mock_initialise_alerter.called_once()
+        mock_initialise_alerter.assert_called_once()
