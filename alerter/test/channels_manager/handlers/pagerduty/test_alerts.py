@@ -16,7 +16,7 @@ from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.apis.pagerduty_api import PagerDutyApi
 from src.channels_manager.channels import PagerDutyChannel
-from src.channels_manager.handlers.pager_duty.alerts import (
+from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -83,8 +83,8 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 exclusive=False, auto_delete=False, passive=False
             )
             self.test_pagerduty_alerts_handler.rabbitmq.queue_declare(
-                self.test_pagerduty_alerts_handler._pd_alerts_handler_queue,
-                False, True, False, False)
+                self.test_pagerduty_alerts_handler
+                    ._pagerduty_alerts_handler_queue, False, True, False, False)
             self.test_pagerduty_alerts_handler.rabbitmq.exchange_declare(
                 ALERT_EXCHANGE, 'topic', False, True, False, False)
             self.test_pagerduty_alerts_handler.rabbitmq.exchange_declare(
@@ -93,11 +93,13 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
             self.test_pagerduty_alerts_handler.rabbitmq.queue_purge(
                 self.test_rabbit_queue_name)
             self.test_pagerduty_alerts_handler.rabbitmq.queue_purge(
-                self.test_pagerduty_alerts_handler._pd_alerts_handler_queue)
+                self.test_pagerduty_alerts_handler
+                    ._pagerduty_alerts_handler_queue)
             self.test_pagerduty_alerts_handler.rabbitmq.queue_delete(
                 self.test_rabbit_queue_name)
             self.test_pagerduty_alerts_handler.rabbitmq.queue_delete(
-                self.test_pagerduty_alerts_handler._pd_alerts_handler_queue)
+                self.test_pagerduty_alerts_handler
+                    ._pagerduty_alerts_handler_queue)
             self.test_pagerduty_alerts_handler.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_pagerduty_alerts_handler.rabbitmq.exchange_delete(
@@ -154,10 +156,10 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
             self.test_pagerduty_alerts_handler._alert_validity_threshold)
         self.assertEqual('pager_duty_{}_alerts_handler_queue'.format(
             self.test_channel_id),
-            self.test_pagerduty_alerts_handler._pd_alerts_handler_queue)
+            self.test_pagerduty_alerts_handler._pagerduty_alerts_handler_queue)
         self.assertEqual(
             'channel.{}'.format(self.test_channel_id),
-            self.test_pagerduty_alerts_handler._pd_channel_routing_key)
+            self.test_pagerduty_alerts_handler._pagerduty_channel_routing_key)
 
     @mock.patch.object(RabbitMQApi, "basic_qos")
     def test_initialise_rabbitmq_initialises_rabbit_correctly(
@@ -172,7 +174,8 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
             # declared
             self.rabbitmq.connect()
             self.test_pagerduty_alerts_handler.rabbitmq.queue_delete(
-                self.test_pagerduty_alerts_handler._pd_alerts_handler_queue)
+                self.test_pagerduty_alerts_handler
+                    ._pagerduty_alerts_handler_queue)
             self.test_pagerduty_alerts_handler.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
             self.test_pagerduty_alerts_handler.rabbitmq.exchange_delete(
@@ -213,14 +216,15 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
             self.test_pagerduty_alerts_handler.rabbitmq.basic_publish_confirm(
                 exchange=ALERT_EXCHANGE,
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key,
+                    ._pagerduty_channel_routing_key,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_pagerduty_alerts_handler.rabbitmq.queue_declare(
-                self.test_pagerduty_alerts_handler._pd_alerts_handler_queue,
+                self.test_pagerduty_alerts_handler
+                    ._pagerduty_alerts_handler_queue,
                 False, True, False, False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
@@ -283,7 +287,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -319,7 +323,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             data_to_send = copy.deepcopy(self.test_alert.alert_data)
             del data_to_send['message']
             body = json.dumps(data_to_send)
@@ -355,7 +359,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             data_to_send = copy.deepcopy(self.test_alert.alert_data)
             del data_to_send['message']
             body = json.dumps(data_to_send)
@@ -391,7 +395,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -431,7 +435,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -465,7 +469,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -504,7 +508,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -548,7 +552,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             invalid_alert = copy.deepcopy(self.test_alert.alert_data)
             del invalid_alert['message']
             body = json.dumps(invalid_alert)
@@ -595,7 +599,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -639,7 +643,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 
@@ -680,7 +684,7 @@ class TestPagerDutyAlertsHandler(unittest.TestCase):
                 self.test_pagerduty_alerts_handler.rabbitmq.channel
             method = pika.spec.Basic.Deliver(
                 routing_key=self.test_pagerduty_alerts_handler
-                    ._pd_channel_routing_key)
+                    ._pagerduty_channel_routing_key)
             body = json.dumps(self.test_alert.alert_data)
             properties = pika.spec.BasicProperties()
 

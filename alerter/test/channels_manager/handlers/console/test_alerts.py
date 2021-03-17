@@ -15,10 +15,11 @@ from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.channels.console import ConsoleChannel
 from src.channels_manager.handlers.console.alerts import (
-    ConsoleAlertsHandler, CONSOLE_HANDLER_INPUT_ROUTING_KEY)
+    ConsoleAlertsHandler)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                 CONSOLE_HANDLER_INPUT_ROUTING_KEY)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
 

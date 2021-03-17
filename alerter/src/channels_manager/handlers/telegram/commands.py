@@ -15,11 +15,9 @@ from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
     TelegramCommandHandlers)
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-
-TCH_INPUT_ROUTING_KEY = 'ping'
 
 
 class TelegramCommandsHandler(ChannelHandler):
@@ -173,7 +171,7 @@ class TelegramCommandsHandler(ChannelHandler):
 
     def _send_data(self, alert: Alert) -> None:
         """
-        We are not implementing the _send_data function because wrt to rabbit,
-        the telegram commands handler only sends heartbeats.
+        We are not implementing the _send_data function because with respect to
+        rabbit, the telegram commands handler only sends heartbeats.
         """
         pass

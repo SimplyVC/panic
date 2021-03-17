@@ -17,12 +17,12 @@ from src.channels_manager.channels import TelegramChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
     TelegramCommandHandlers)
 from src.channels_manager.handlers.telegram.commands import (
-    TelegramCommandsHandler, TCH_INPUT_ROUTING_KEY)
+    TelegramCommandsHandler)
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY
 from src.utils.exceptions import MessageWasNotDeliveredException
 
 

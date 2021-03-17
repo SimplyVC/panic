@@ -22,7 +22,7 @@ from src.channels_manager.handlers import (TelegramAlertsHandler,
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.log.alerts import LogAlertsHandler
 from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
-from src.channels_manager.handlers.pager_duty.alerts import (
+from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
 from src.channels_manager.handlers.starters import (
     _initialise_channel_handler_logger, _initialise_alerts_logger,
