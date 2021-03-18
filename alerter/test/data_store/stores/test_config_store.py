@@ -1,13 +1,9 @@
-import copy
 import json
 import logging
 import unittest
 from datetime import datetime
 from datetime import timedelta
-from queue import Queue
-from typing import Union, Dict
 from unittest import mock
-from unittest.mock import call
 
 import pika
 import pika.exceptions
@@ -15,19 +11,15 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
-from src.message_broker.rabbitmq import RabbitMQApi
-
 from src.data_store.redis.store_keys import Keys
-
 from src.data_store.stores.config import ConfigStore
+from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                  STORE_CONFIGS_QUEUE_NAME,
                                  STORE_CONFIGS_ROUTING_KEY_CHAINS)
-from src.utils.exceptions import (PANICException,
-                                  ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
+from src.utils.exceptions import (PANICException)
+from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
                               delete_queue_if_exists)
@@ -345,7 +337,7 @@ class TestConfigStore(unittest.TestCase):
         self.assertEqual(None, self.test_store.mongo)
 
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-          self) -> None:
+            self) -> None:
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
@@ -446,7 +438,7 @@ class TestConfigStore(unittest.TestCase):
 
             self.assertEqual(data, json.loads(
                 self.redis.get(Keys.get_config(routing_key)).decode(
-                                    "utf-8")))
+                    "utf-8")))
 
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -566,7 +558,7 @@ class TestConfigStore(unittest.TestCase):
     @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
                 autospec=True)
     def test_process_data_saves_in_redis_then_removes_it_on_empty_config(
-        self, mock_config_data, mock_routing_key, mock_send_hb,
+            self, mock_config_data, mock_routing_key, mock_send_hb,
             mock_ack) -> None:
 
         self.rabbitmq.connect()

@@ -3,12 +3,11 @@ import unittest
 from datetime import timedelta
 from unittest import mock
 
-from src.data_store.stores.config import ConfigStore
-
 from src.data_store.starters import (
     _initialise_store_logger, _initialise_store, start_system_store,
     start_github_store, start_alert_store, start_config_store)
 from src.data_store.stores.alert import AlertStore
+from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
