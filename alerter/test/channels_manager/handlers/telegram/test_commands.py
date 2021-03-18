@@ -24,6 +24,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants import HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY
 from src.utils.exceptions import MessageWasNotDeliveredException
+from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
+                              delete_exchange_if_exists, disconnect_from_rabbit)
 
 
 class TestTelegramCommandsHandler(unittest.TestCase):
@@ -99,37 +101,16 @@ class TestTelegramCommandsHandler(unittest.TestCase):
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
-        try:
-            self.test_telegram_commands_handler.rabbitmq.connect()
-
-            # Declare them before just in case there are tests which do not
-            # use these queues and exchanges
-            self.test_telegram_commands_handler.rabbitmq.queue_declare(
-                queue=self.test_rabbit_queue_name, durable=True,
-                exclusive=False, auto_delete=False, passive=False
-            )
-            self.test_telegram_commands_handler.rabbitmq.queue_declare(
-                self.test_telegram_commands_handler
-                    ._telegram_commands_handler_queue, False, True, False,
-                False)
-            self.test_telegram_commands_handler.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
-
-            self.test_telegram_commands_handler.rabbitmq.queue_purge(
-                self.test_rabbit_queue_name)
-            self.test_telegram_commands_handler.rabbitmq.queue_purge(
-                self.test_telegram_commands_handler
-                    ._telegram_commands_handler_queue)
-            self.test_telegram_commands_handler.rabbitmq.queue_delete(
-                self.test_rabbit_queue_name)
-            self.test_telegram_commands_handler.rabbitmq.queue_delete(
-                self.test_telegram_commands_handler
-                    ._telegram_commands_handler_queue)
-            self.test_telegram_commands_handler.rabbitmq.exchange_delete(
-                HEALTH_CHECK_EXCHANGE)
-            self.test_telegram_commands_handler.rabbitmq.disconnect()
-        except Exception as e:
-            print("Deletion of queues and exchanges failed: {}".format(e))
+        connect_to_rabbit(self.test_telegram_commands_handler.rabbitmq)
+        delete_queue_if_exists(self.test_telegram_commands_handler.rabbitmq,
+                               self.test_rabbit_queue_name)
+        delete_queue_if_exists(
+            self.test_telegram_commands_handler.rabbitmq,
+            self.test_telegram_commands_handler
+                ._telegram_commands_handler_queue)
+        delete_exchange_if_exists(self.test_telegram_commands_handler.rabbitmq,
+                                  HEALTH_CHECK_EXCHANGE)
+        disconnect_from_rabbit(self.test_telegram_commands_handler.rabbitmq)
 
         self.dummy_logger = None
         self.test_channel_logger = None
@@ -223,13 +204,13 @@ class TestTelegramCommandsHandler(unittest.TestCase):
 
             # To make sure that the exchanges and queues have not already been
             # declared
-            self.rabbitmq.connect()
+            connect_to_rabbit(self.rabbitmq)
             self.test_telegram_commands_handler.rabbitmq.queue_delete(
                 self.test_telegram_commands_handler
                     ._telegram_commands_handler_queue)
             self.test_telegram_commands_handler.rabbitmq.exchange_delete(
                 HEALTH_CHECK_EXCHANGE)
-            self.rabbitmq.disconnect()
+            disconnect_from_rabbit(self.rabbitmq)
 
             self.test_telegram_commands_handler._initialise_rabbitmq()
 
