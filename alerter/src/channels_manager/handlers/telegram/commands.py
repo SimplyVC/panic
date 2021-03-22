@@ -9,34 +9,28 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 from telegram.ext import CommandHandler, MessageHandler, Filters, Updater
 
+from src.alerter.alerts.alert import Alert
 from src.channels_manager.channels.telegram import TelegramChannel
-from src.channels_manager.commands.handlers.telegram_cmd_handlers import \
-    TelegramCommandHandlers
+from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
+    TelegramCommandHandlers)
 from src.channels_manager.handlers.handler import ChannelHandler
-from src.utils.constants import HEALTH_CHECK_EXCHANGE
+from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils.constants import HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-
-_TCH_INPUT_ROUTING_KEY = 'ping'
 
 
 class TelegramCommandsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbit_ip: str, redis_ip: str, redis_db: int, redis_port: int,
-                 unique_alerter_identifier: str, mongo_ip: str, mongo_db: str,
-                 mongo_port: int, associated_chains: Dict,
-                 telegram_channel: TelegramChannel) -> None:
-        super().__init__(handler_name, logger, rabbit_ip)
+                 rabbitmq: RabbitMQApi, telegram_channel: TelegramChannel,
+                 cmd_handlers: TelegramCommandHandlers) -> None:
+        super().__init__(handler_name, logger, rabbitmq)
 
         self._telegram_channel = telegram_channel
         self._telegram_commands_handler_queue = \
             'telegram_{}_commands_handler_queue'.format(
                 self.telegram_channel.channel_id)
-        self._cmd_handlers = TelegramCommandHandlers(
-            'Telegram Command Handlers', logger.getChild(
-                TelegramCommandHandlers.__name__), rabbit_ip, redis_ip,
-            redis_db, redis_port, unique_alerter_identifier, mongo_ip, mongo_db,
-            mongo_port, associated_chains, telegram_channel)
+        self._cmd_handlers = cmd_handlers
 
         command_specific_handlers = [
             CommandHandler('start', self.cmd_handlers.start_callback),
@@ -78,9 +72,9 @@ class TelegramCommandsHandler(ChannelHandler):
                                     False, True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
                          "'%s'", self._telegram_commands_handler_queue,
-                         HEALTH_CHECK_EXCHANGE, _TCH_INPUT_ROUTING_KEY)
+                         HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY)
         self.rabbitmq.queue_bind(self._telegram_commands_handler_queue,
-                                 HEALTH_CHECK_EXCHANGE, _TCH_INPUT_ROUTING_KEY)
+                                 HEALTH_CHECK_EXCHANGE, TCH_INPUT_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
                           self._telegram_commands_handler_queue)
         self.rabbitmq.basic_consume(self._telegram_commands_handler_queue,
@@ -97,9 +91,6 @@ class TelegramCommandsHandler(ChannelHandler):
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.logger.debug("Sent heartbeat to %s exchange",
                           HEALTH_CHECK_EXCHANGE)
-
-    def _listen_for_data(self) -> None:
-        self.rabbitmq.start_consuming()
 
     def _start_handling(self, run_in_background: bool = False) -> None:
         # Start polling
@@ -127,7 +118,7 @@ class TelegramCommandsHandler(ChannelHandler):
         heartbeat = {}
         try:
             heartbeat['component_name'] = self.handler_name
-            heartbeat['running_processes'] = self._updater.running
+            heartbeat['is_alive'] = self._updater.running
             heartbeat['timestamp'] = datetime.now().timestamp()
 
             # If updater is not running, try to restart it.
@@ -178,8 +169,9 @@ class TelegramCommandsHandler(ChannelHandler):
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
-    def _process_alert(self, ch: BlockingChannel,
-                       method: pika.spec.Basic.Deliver,
-                       properties: pika.spec.BasicProperties,
-                       body: bytes) -> None:
+    def _send_data(self, alert: Alert) -> None:
+        """
+        We are not implementing the _send_data function because with respect to
+        rabbit, the telegram commands handler only sends heartbeats.
+        """
         pass
